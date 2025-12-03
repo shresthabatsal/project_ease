@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:project_ease/screens/login_screen.dart';
+import 'package:project_ease/widgets/custom_button.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -11,16 +12,15 @@ class DashboardScreen extends StatelessWidget {
         title: Text("Dashboard"),
         backgroundColor: Colors.yellow,
       ),
-      body: Padding(padding: const EdgeInsets.all(8),
+      body: Padding(padding: const EdgeInsets.all(16),
       child: SingleChildScrollView(
         child: Column(
           children: [
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
-                onPressed: (){
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginScreen()));
-                }, child: Text("Login", style: TextStyle(fontSize: 20),)),
+              child: CustomButton(onPressed: (){
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginScreen()));
+              }, text: "Login Screen")
             )
           ],
         ),
