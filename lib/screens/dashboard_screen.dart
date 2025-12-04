@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:project_ease/screens/login_screen.dart';
+import 'package:project_ease/screens/signup_screen.dart';
 import 'package:project_ease/widgets/custom_button.dart';
 
 class DashboardScreen extends StatelessWidget {
@@ -21,6 +22,15 @@ class DashboardScreen extends StatelessWidget {
               child: CustomButton(onPressed: (){
                 Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginScreen()));
               }, text: "Login Screen")
+            ),
+
+            SizedBox(height: 16),
+
+            SizedBox(
+              width: double.infinity,
+              child: CustomButton(onPressed: (){
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const SignupScreen()));
+              }, text: "Signup Screen")
             )
           ],
         ),
