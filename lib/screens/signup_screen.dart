@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:project_ease/app/theme/app_colors.dart';
+import 'package:project_ease/common/custom_snackbar.dart';
 import 'package:project_ease/widgets/custom_button.dart';
 import 'package:project_ease/widgets/custom_text_form_field.dart';
 
@@ -124,14 +125,21 @@ class _SignupScreenState extends State<SignupScreen> {
                       onPressed: () {
                         if (_formKey.currentState!.validate()) {
                           if (!agreeTerms) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text("You must agree to the Terms & Conditions"),
-                                behavior: SnackBarBehavior.floating
-                              ),
+                            showAppSnackBar(
+                              context: context,
+                              message:
+                                  "You must agree to the Terms & Conditions",
+                              icon: Icons.warning_amber_rounded,
                             );
                             return;
                           }
+
+                          // Proceed with signup logic
+                          showAppSnackBar(
+                            context: context,
+                            message: "Signed in successfully!",
+                            icon: Icons.check_circle_outline,
+                          );
                         }
                       },
                     ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:project_ease/app/theme/app_colors.dart';
+import 'package:project_ease/common/custom_snackbar.dart';
 import 'package:project_ease/widgets/custom_button.dart';
 import 'package:project_ease/widgets/custom_text_form_field.dart';
 
@@ -121,7 +122,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     CustomButton(
                       text: "Login",
                       onPressed: () {
-                        if (_formKey.currentState!.validate()) {}
+                        if (_formKey.currentState!.validate()) {
+                          showAppSnackBar(
+                            context: context,
+                            message: "Logged in successfully!",
+                            icon: Icons.check_circle,
+                          );
+                        }
                       },
                     ),
 
