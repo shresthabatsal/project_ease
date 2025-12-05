@@ -74,6 +74,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     CustomTextFormField(
                       controller: passwordController,
                       hintText: "Password",
+                      isPassword: true,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return "Password is required.";
