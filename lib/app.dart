@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:project_ease/screens/dashboard_screen.dart';
+import 'package:project_ease/screens/splash_screen.dart';
 
 class App extends StatelessWidget {
   const App({super.key});
@@ -11,7 +11,7 @@ class App extends StatelessWidget {
         fontFamily: "Montserrat"
       ),
       debugShowCheckedModeBanner: false,
-      home: DashboardScreen()
+      home: SplashScreen()
     );
   }
 }

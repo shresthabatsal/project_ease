@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:project_ease/app/theme/app_colors.dart';
 import 'package:project_ease/common/custom_snackbar.dart';
+import 'package:project_ease/screens/login_screen.dart';
 import 'package:project_ease/widgets/custom_button.dart';
 import 'package:project_ease/widgets/custom_text_form_field.dart';
 
@@ -134,12 +135,20 @@ class _SignupScreenState extends State<SignupScreen> {
                             return;
                           }
 
-                          // Proceed with signup logic
                           showAppSnackBar(
                             context: context,
                             message: "Signed in successfully!",
                             icon: Icons.check_circle_outline,
                           );
+
+                          Future.delayed(const Duration(seconds: 2), () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const LoginScreen(),
+                              ),
+                            );
+                          });
                         }
                       },
                     ),
@@ -155,7 +164,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         ),
                         GestureDetector(
                           onTap: () {
-                            Navigator.pop(context);
+                            Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginScreen()));
                           },
                           child: const Text(
                             "Login.",

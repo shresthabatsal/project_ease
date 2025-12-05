@@ -32,10 +32,8 @@ class CustomButton extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (leadingIcon != null) ...[
-              Icon(leadingIcon, color: Colors.black),
-              const SizedBox(width: 8),
-            ],
+            if (leadingIcon != null) Icon(leadingIcon, color: Colors.black),
+            if (leadingIcon != null) const SizedBox(width: 8),
             Text(
               text,
               style: const TextStyle(

@@ -15,30 +15,25 @@ void showAppSnackBar({
       content: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: background ?? const Color(0xFFF7F7F7), // light grey instead of white
+          color: background ?? const Color(0xFFF7F7F7),
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.12),
               blurRadius: 10,
               offset: const Offset(0, 4),
-            )
+            ),
           ],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (icon != null) ...[
-              Icon(icon, color: Colors.black87),
-              const SizedBox(width: 8),
-            ],
+            if (icon != null) Icon(icon, color: Colors.black87),
+            if (icon != null) const SizedBox(width: 8),
             Flexible(
               child: Text(
                 message,
-                style: const TextStyle(
-                  color: Colors.black87,
-                  fontSize: 14,
-                ),
+                style: const TextStyle(color: Colors.black87, fontSize: 14),
               ),
             ),
           ],

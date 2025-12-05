@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:project_ease/app/theme/app_colors.dart';
+import 'package:project_ease/screens/login_screen.dart';
+import 'package:project_ease/utils/app_fonts.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -15,17 +17,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final List<Map<String, String>> _slides = [
     {
       "title": "Shop with Ease",
-      "subtitle": "Browse stores, explore products, and\nplace orders effortlessly.",
+      "subtitle":
+          "Browse stores, explore products, and\nplace orders effortlessly.",
       "image": "assets/images/onboarding_1.png",
     },
     {
       "title": "Smart Shopping",
-      "subtitle": "Track availability, add items to your cart, and\ncomplete your order in just a few taps.",
+      "subtitle":
+          "Track availability, add items to your cart, and\ncomplete your order in just a few taps.",
       "image": "assets/images/onboarding_2.png",
     },
     {
       "title": "Fast Pickup",
-      "subtitle": "Get a unique code and collect your order\nquickly and conveniently.",
+      "subtitle":
+          "Get a unique code and collect your order\nquickly and conveniently.",
       "image": "assets/images/onboarding_3.png",
     },
   ];
@@ -39,14 +44,21 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   void _nextPage() {
     if (_currentPage < _slides.length - 1) {
       _pageController.nextPage(
-          duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
-    } else {}
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    } else {
+      Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginScreen()));
+    }
   }
 
-  void _skip() {}
+  void _skip() {
+    Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginScreen()));
+  }
 
   @override
   Widget build(BuildContext context) {
+    AppFonts.init(context);
     return Scaffold(
       appBar: AppBar(backgroundColor: Colors.white),
       backgroundColor: Colors.white,
@@ -60,38 +72,49 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 onPageChanged: _onPageChanged,
                 itemBuilder: (context, index) {
                   final slide = _slides[index];
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        const SizedBox(height: 40),
 
-                        // Title
-                        Text(
-                          slide['title']!,
-                          style: const TextStyle(
-                              fontSize: 28, fontWeight: FontWeight.bold),
-                          textAlign: TextAlign.center,
-                        ),
-
+                  return LayoutBuilder(
+                    builder: (context, constraints) {
+                      double imageHeight = constraints.maxHeight * 0.45;
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            const SizedBox(height: 40),
+                            Text(
+                              slide['title']!,
+                              style: TextStyle(
+                                  fontSize: AppFonts.title,
+                                  fontWeight: FontWeight.bold),
+                              textAlign: TextAlign.center,
+                            ),
+                        const SizedBox(height: 8),
                         const SizedBox(height: 8),
 
                         // Subtitle
-                        Text(
-                          slide['subtitle']!,
-                          style: const TextStyle(fontSize: 16, color: Colors.grey),
-                          textAlign: TextAlign.center,
-                        ),
+                            const SizedBox(height: 8),
 
-                        // Image
-                        Expanded(
-                          child: Center(
-                            child: Image.asset(slide['image']!, height: 300)
-                          ),
+                        // Subtitle
+                            Text(
+                              slide['subtitle']!,
+                              style: TextStyle(
+                                  fontSize: AppFonts.subtitle, color: Colors.grey),
+                              textAlign: TextAlign.center,
+                            ),
+                            Expanded(
+                              child: Center(
+                                child: Image.asset(
+                                  slide['image']!,
+                                  height: imageHeight,
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      );
+                    },
                   );
                 },
               ),
@@ -134,7 +157,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     onPressed: _nextPage,
                     child: Text(
                       _currentPage == _slides.length - 1 ? "Done" : "Next",
-                      style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w500),
+                      style: const TextStyle(
+                        color: Colors.black,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
                 ],
