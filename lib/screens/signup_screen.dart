@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:project_ease/app/theme/app_colors.dart';
 import 'package:project_ease/widgets/custom_button.dart';
 import 'package:project_ease/widgets/custom_text_form_field.dart';
@@ -172,6 +173,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     const SizedBox(height: 20),
 
                     CustomButton(
+                      leadingIcon: FontAwesomeIcons.google,
                       text: "Continue with Google",
                       color: Colors.white,
                       onPressed: () {},

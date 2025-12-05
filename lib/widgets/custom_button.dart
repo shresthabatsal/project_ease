@@ -3,14 +3,17 @@ import 'package:project_ease/app/theme/app_colors.dart';
 
 class CustomButton extends StatelessWidget {
   const CustomButton({
-    super.key, 
-    required this.onPressed, 
+    super.key,
+    required this.onPressed,
     required this.text,
-    this.color});
+    this.color,
+    this.leadingIcon,
+  });
 
   final VoidCallback onPressed;
   final String text;
   final Color? color;
+  final IconData? leadingIcon;
 
   @override
   Widget build(BuildContext context) {
@@ -25,13 +28,23 @@ class CustomButton extends StatelessWidget {
           ),
         ),
         onPressed: onPressed,
-        child: Text(
-          text,
-          style: const TextStyle(
-            color: Colors.black,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (leadingIcon != null) ...[
+              Icon(leadingIcon, color: Colors.black),
+              const SizedBox(width: 8),
+            ],
+            Text(
+              text,
+              style: const TextStyle(
+                color: Colors.black,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
         ),
       ),
     );
