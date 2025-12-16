@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:project_ease/theme/app_colors.dart';
 
 class CustomTextFormField extends StatefulWidget {
   const CustomTextFormField({
@@ -30,10 +29,6 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
       decoration: InputDecoration(
         hintText: widget.hintText,
         labelText: widget.hintText,
-        hintStyle: const TextStyle(color: Colors.grey),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-
         // Eye button
         suffixIcon: widget.isPassword
             ? IconButton(
@@ -48,19 +43,6 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
                 },
               )
             : null,
-
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Colors.grey, width: 1),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Colors.grey, width: 1),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: AppColors.primary, width: 2),
-        ),
       ),
       validator: widget.validator,
     );

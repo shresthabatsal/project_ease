@@ -24,7 +24,7 @@ ThemeData getApplicationTheme() {
 
     // Text Field Theme
     inputDecorationTheme: InputDecorationTheme(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
 
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),

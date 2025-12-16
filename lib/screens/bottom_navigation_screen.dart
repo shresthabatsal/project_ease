@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:project_ease/theme/app_colors.dart';
 import 'package:project_ease/screens/bottom_navigation_screens/account_screen.dart';
 import 'package:project_ease/screens/bottom_navigation_screens/cart_screen.dart';
 import 'package:project_ease/screens/bottom_navigation_screens/home_screen.dart';
@@ -28,13 +27,6 @@ class _BottomNavigationScreenState extends State<BottomNavigationScreen> {
     return Scaffold(
       body: lstBottomScreen[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed, 
-        iconSize: 30,
-        backgroundColor: Colors.white,
-        selectedItemColor: AppColors.primary,
-        elevation: 20,
-        showSelectedLabels: false,
-        showUnselectedLabels: false,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
           BottomNavigationBarItem(icon: Icon(Icons.search), label: "Search"),
