@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:project_ease/screens/splash_screen.dart';
+import 'package:project_ease/theme/theme_data.dart';
 
 class App extends StatelessWidget {
   const App({super.key});
@@ -7,9 +8,7 @@ class App extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      theme: ThemeData(
-        fontFamily: "Montserrat"
-      ),
+      theme: getApplicationTheme(),
       debugShowCheckedModeBanner: false,
       home: SplashScreen()
     );

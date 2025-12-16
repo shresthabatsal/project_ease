@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:project_ease/app/theme/app_colors.dart';
+import 'package:project_ease/theme/app_colors.dart';
 
 class CustomButton extends StatelessWidget {
   const CustomButton({
