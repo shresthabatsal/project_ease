@@ -11,7 +11,7 @@ class CartScreen extends StatelessWidget {
         title: const Text("CART"),
         automaticallyImplyLeading: false,
       ),
-      body: const Center(child: Text("Search Screen")),
+      body: const Center(child: Text("Cart Screen")),
     );
   }
 }

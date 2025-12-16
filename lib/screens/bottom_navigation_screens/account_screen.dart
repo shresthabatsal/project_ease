@@ -1,12 +1,17 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 
 class AccountScreen extends StatelessWidget {
   const AccountScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox.expand(
-      child: Center(child: Text("Account Screen"),),
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: const Text("ACCOUNT"),
+        automaticallyImplyLeading: false,
+      ),
+      body: const Center(child: Text("Account Screen")),
     );
   }
 }

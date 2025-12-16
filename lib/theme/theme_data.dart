@@ -50,7 +50,7 @@ ThemeData getApplicationTheme() {
       backgroundColor: Colors.white,
       titleTextStyle: TextStyle(
         fontFamily: "Montserrat",
-        fontWeight: FontWeight.w500,
+        fontWeight: FontWeight.w600,
         fontSize: 18,
         color: Colors.black,
       ),
