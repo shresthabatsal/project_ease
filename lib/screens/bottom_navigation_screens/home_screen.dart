@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:project_ease/theme/app_colors.dart';
+import 'package:project_ease/widgets/home_action_card.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -21,6 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: Padding(
@@ -73,6 +75,56 @@ class _HomeScreenState extends State<HomeScreen> {
 
           const SizedBox(height: 12),
           _buildDotsIndicator(),
+
+          const SizedBox(height: 12),
+
+          // Grid
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: GridView.count(
+              crossAxisCount: 4,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              children: [
+                HomeActionCard(
+                  icon: Icons.shopping_basket_sharp,
+                  label: 'Grocery',
+                  onTap: () {},
+                ),
+                HomeActionCard(
+                  icon: Icons.checkroom,
+                  label: 'Clothing',
+                  onTap: () {},
+                ),
+                HomeActionCard(
+                  icon: Icons.cleaning_services,
+                  label: 'Household',
+                  onTap: () {},
+                ),
+                HomeActionCard(
+                  icon: Icons.devices,
+                  label: 'Electronics',
+                  onTap: () {},
+                ),
+                HomeActionCard(icon: Icons.spa, label: 'Care', onTap: () {}),
+                HomeActionCard(
+                  icon: Icons.health_and_safety,
+                  label: 'Health',
+                  onTap: () {},
+                ),
+                HomeActionCard(
+                  icon: Icons.edit,
+                  label: 'Stationery',
+                  onTap: () {},
+                ),
+                HomeActionCard(
+                  icon: Icons.child_friendly,
+                  label: 'Baby',
+                  onTap: () {},
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
