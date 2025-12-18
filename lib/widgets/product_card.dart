@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:project_ease/utils/app_fonts.dart';
 
 class ProductCard extends StatelessWidget {
   final String imagePath;
@@ -20,6 +21,9 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppFonts.init(context);
+    final bool isTablet = MediaQuery.of(context).size.width >= 600;
+
     return Card(
       color: Colors.grey.shade100,
       clipBehavior: Clip.antiAlias,
@@ -35,6 +39,7 @@ class ProductCard extends StatelessWidget {
             Stack(
               children: [
                 SizedBox(
+                  height: isTablet ? 220 : 180,
                   child: ClipRRect(
                     borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(12),
@@ -42,20 +47,20 @@ class ProductCard extends StatelessWidget {
                     ),
                     child: Image.asset(
                       imagePath,
-                      height: 180,
+                      
                       width: double.infinity,
                       fit: BoxFit.cover,
                     ),
                   ),
                 ),
                 // Positioned(
-                //   top: 8,
-                //   right: 8,
+                //   top: isTablet ? 12 : 8,
+                //   right: isTablet ? 12 : 8,
                 //   child: InkWell(
                 //     borderRadius: BorderRadius.circular(20),
                 //     onTap: onFavoriteTap,
                 //     child: Container(
-                //       padding: const EdgeInsets.all(6),
+                //       padding: EdgeInsets.all(isTablet ? 8 : 6),
                 //       decoration: BoxDecoration(
                 //         color: Colors.white,
                 //         shape: BoxShape.circle,
@@ -63,7 +68,7 @@ class ProductCard extends StatelessWidget {
                 //       child: Icon(
                 //         isFavorite ? Icons.favorite : Icons.favorite_border,
                 //         color: isFavorite ? Colors.red : Colors.grey,
-                //         size: 20,
+                //         size: isTablet ? 24 : 20,
                 //       ),
                 //     ),
                 //   ),
@@ -73,7 +78,10 @@ class ProductCard extends StatelessWidget {
 
             // Bottom Part
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              padding: EdgeInsets.symmetric(
+                horizontal: isTablet ? 12 : 8,
+                vertical: isTablet ? 12 : 8,
+              ),
               decoration: BoxDecoration(
                 color: Colors.grey.shade200,
                 borderRadius: const BorderRadius.only(
@@ -86,14 +94,18 @@ class ProductCard extends StatelessWidget {
                 children: [
                   Text(
                     name,
-                    style: const TextStyle(fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: isTablet ? AppFonts.bodyLarge : AppFonts.bodyMedium,
+                    ),
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: isTablet ? 6 : 4),
                   Text(
                     price,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.w500,
                       color: Colors.black54,
+                      fontSize: isTablet ? AppFonts.bodyMedium : AppFonts.labelMedium,
                     ),
                   ),
                 ],

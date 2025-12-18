@@ -59,8 +59,8 @@ ThemeData getApplicationTheme() {
     // Bottom Navigation Bar Theme
     bottomNavigationBarTheme: BottomNavigationBarThemeData(
       type: BottomNavigationBarType.fixed,
-      selectedIconTheme: const IconThemeData(size: 30),
-      unselectedIconTheme: const IconThemeData(size: 30),
+      // selectedIconTheme: const IconThemeData(size: 30),
+      // unselectedIconTheme: const IconThemeData(size: 30),
       backgroundColor: Colors.white,
       selectedItemColor: AppColors.primary,
       elevation: 20,

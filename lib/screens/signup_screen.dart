@@ -5,6 +5,7 @@ import 'package:project_ease/common/custom_snackbar.dart';
 import 'package:project_ease/screens/login_screen.dart';
 import 'package:project_ease/widgets/custom_button.dart';
 import 'package:project_ease/widgets/custom_text_form_field.dart';
+import 'package:project_ease/utils/app_fonts.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -23,41 +24,45 @@ class _SignupScreenState extends State<SignupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    AppFonts.init(context);
+    final bool isTablet = MediaQuery.of(context).size.width >= 600;
+
     return Scaffold(
       appBar: AppBar(backgroundColor: Colors.white),
       backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.all(isTablet ? 48 : 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const SizedBox(height: 20),
-
+              SizedBox(height: isTablet ? 40 : 20),
               SizedBox(
-                height: 13,
+                height: isTablet ? 26 : 13,
                 child: Image.asset(
                   "assets/images/ease_logo.png",
                   fit: BoxFit.contain,
                 ),
               ),
-
-              const SizedBox(height: 70),
-
-              const Text(
+              SizedBox(height: isTablet ? 140 : 70),
+              Text(
                 "Get Started",
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: isTablet
+                      ? AppFonts.titleLarge
+                      : AppFonts.titleMedium,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-
-              const SizedBox(height: 8),
-
-              const Text(
+              SizedBox(height: isTablet ? 16 : 8),
+              Text(
                 "Sign up to get started with Ease.",
-                style: TextStyle(fontSize: 16, color: Colors.grey),
+                style: TextStyle(
+                  fontSize: isTablet ? AppFonts.bodyLarge : AppFonts.bodyMedium,
+                  color: Colors.grey,
+                ),
               ),
-
-              const SizedBox(height: 25),
-
+              SizedBox(height: isTablet ? 50 : 25),
               Form(
                 key: _formKey,
                 child: Column(
@@ -72,8 +77,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 16),
-
+                    SizedBox(height: isTablet ? 32 : 16),
                     CustomTextFormField(
                       controller: passwordController,
                       hintText: "Password",
@@ -85,9 +89,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         return null;
                       },
                     ),
-
-                    const SizedBox(height: 12),
-
+                    SizedBox(height: isTablet ? 24 : 12),
                     Row(
                       children: [
                         Checkbox(
@@ -102,14 +104,24 @@ class _SignupScreenState extends State<SignupScreen> {
                         Expanded(
                           child: Wrap(
                             children: [
-                              const Text("I agree to the "),
+                              Text(
+                                "I agree to the ",
+                                style: TextStyle(
+                                  fontSize: isTablet
+                                      ? AppFonts.bodyMedium
+                                      : AppFonts.bodySmall,
+                                ),
+                              ),
                               GestureDetector(
                                 onTap: () {},
-                                child: const Text(
+                                child: Text(
                                   "Terms & Conditions.",
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     color: Colors.black,
+                                    fontSize: isTablet
+                                        ? AppFonts.bodyMedium
+                                        : AppFonts.bodySmall,
                                   ),
                                 ),
                               ),
@@ -118,9 +130,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         ),
                       ],
                     ),
-
-                    const SizedBox(height: 20),
-
+                    SizedBox(height: isTablet ? 40 : 20),
                     CustomButton(
                       text: "Sign Up",
                       onPressed: () {
@@ -152,43 +162,61 @@ class _SignupScreenState extends State<SignupScreen> {
                         }
                       },
                     ),
-
-                    const SizedBox(height: 20),
-
+                    SizedBox(height: isTablet ? 40 : 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text(
+                        Text(
                           "Already have an account? ",
-                          style: TextStyle(fontStyle: FontStyle.italic),
+                          style: TextStyle(
+                            fontStyle: FontStyle.italic,
+                            fontSize: isTablet
+                                ? AppFonts.bodyMedium
+                                : AppFonts.bodySmall,
+                          ),
                         ),
                         GestureDetector(
                           onTap: () {
-                            Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginScreen()));
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const LoginScreen(),
+                              ),
+                            );
                           },
-                          child: const Text(
+                          child: Text(
                             "Login.",
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: isTablet
+                                  ? AppFonts.bodyMedium
+                                  : AppFonts.bodySmall,
+                            ),
                           ),
                         ),
                       ],
                     ),
-
-                    const SizedBox(height: 20),
-
+                    SizedBox(height: isTablet ? 40 : 20),
                     Row(
                       children: [
                         Expanded(child: Divider(color: Colors.grey.shade400)),
-                        const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 10),
-                          child: Text("or"),
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: isTablet ? 20 : 10,
+                          ),
+                          child: Text(
+                            "or",
+                            style: TextStyle(
+                              fontSize: isTablet
+                                  ? AppFonts.bodyMedium
+                                  : AppFonts.labelMedium,
+                            ),
+                          ),
                         ),
                         Expanded(child: Divider(color: Colors.grey.shade400)),
                       ],
                     ),
-
-                    const SizedBox(height: 20),
-
+                    SizedBox(height: isTablet ? 40 : 20),
                     CustomButton(
                       leadingIcon: FontAwesomeIcons.google,
                       text: "Continue with Google",

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:project_ease/theme/app_colors.dart';
+import 'package:project_ease/utils/app_fonts.dart';
 import 'package:project_ease/widgets/home_action_card.dart';
 import 'package:project_ease/widgets/product_card.dart';
 
@@ -22,32 +23,37 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    AppFonts.init(context);
+    final bool isTablet = MediaQuery.of(context).size.width >= 600;
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
+        toolbarHeight: isTablet ? 96 : kToolbarHeight,
         automaticallyImplyLeading: false,
         title: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8),
           child: Row(
             children: [
-              // Logo
-              Image.asset('assets/images/ease_logo.png', height: 10),
-
+              Image.asset('assets/images/ease_logo.png', height: isTablet ? 20 : 10),
               const SizedBox(width: 16),
 
               // Texts
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
-                children: const [
+                children: [
                   Text(
                     'You are browsing at',
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                    style: TextStyle(
+                      fontSize: isTablet ? AppFonts.labelLarge : AppFonts.labelMedium,
+                      color: Colors.grey,
+                    ),
                   ),
                   Text(
                     'Ease',
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: isTablet ? AppFonts.bodyLarge + 4 : AppFonts.bodyLarge,
                       fontWeight: FontWeight.w600,
                       color: Colors.black,
                     ),
@@ -63,6 +69,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Padding(
             padding: const EdgeInsets.only(right: 8),
             child: IconButton(
+              iconSize: isTablet ? 32 : 24,
               icon: const Icon(Icons.notifications_none, color: Colors.black),
               onPressed: () {},
             ),
@@ -73,57 +80,27 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           children: [
             const SizedBox(height: 16),
-            _buildAdSlider(),
-
+            _buildAdSlider(isTablet),
             const SizedBox(height: 12),
-            _buildDotsIndicator(),
-
+            _buildDotsIndicator(isTablet),
             const SizedBox(height: 12),
 
             // Grid
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: GridView.count(
-                crossAxisCount: 4,
+                crossAxisCount: isTablet ? 8 : 4,
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 children: [
-                  HomeActionCard(
-                    icon: Icons.shopping_basket_sharp,
-                    label: 'Grocery',
-                    onTap: () {},
-                  ),
-                  HomeActionCard(
-                    icon: Icons.checkroom,
-                    label: 'Clothing',
-                    onTap: () {},
-                  ),
-                  HomeActionCard(
-                    icon: Icons.cleaning_services,
-                    label: 'Household',
-                    onTap: () {},
-                  ),
-                  HomeActionCard(
-                    icon: Icons.devices,
-                    label: 'Electronics',
-                    onTap: () {},
-                  ),
+                  HomeActionCard(icon: Icons.shopping_basket_sharp, label: 'Grocery', onTap: () {}),
+                  HomeActionCard(icon: Icons.checkroom, label: 'Clothing', onTap: () {}),
+                  HomeActionCard(icon: Icons.cleaning_services, label: 'Household', onTap: () {}),
+                  HomeActionCard(icon: Icons.devices, label: 'Electronics', onTap: () {}),
                   HomeActionCard(icon: Icons.spa, label: 'Care', onTap: () {}),
-                  HomeActionCard(
-                    icon: Icons.health_and_safety,
-                    label: 'Health',
-                    onTap: () {},
-                  ),
-                  HomeActionCard(
-                    icon: Icons.edit,
-                    label: 'Stationery',
-                    onTap: () {},
-                  ),
-                  HomeActionCard(
-                    icon: Icons.child_friendly,
-                    label: 'Baby',
-                    onTap: () {},
-                  ),
+                  HomeActionCard(icon: Icons.health_and_safety, label: 'Health', onTap: () {}),
+                  HomeActionCard(icon: Icons.edit, label: 'Stationery', onTap: () {}),
+                  HomeActionCard(icon: Icons.child_friendly, label: 'Baby', onTap: () {}),
                 ],
               ),
             ),
@@ -132,21 +109,23 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
               child: Align(
                 alignment: Alignment.centerLeft,
-                child: const Text(
+                child: Text(
                   'FOR YOU',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    fontSize: AppFonts.labelLarge,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),
-
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: GridView(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  mainAxisExtent: 248,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: isTablet ? 4 : 2,
+                  mainAxisExtent: isTablet ? 318 : 248,
                 ),
                 children: [
                   ProductCard(
@@ -190,39 +169,47 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Ad Slider
-  Widget _buildAdSlider() {
-    return SizedBox(
-      height: 160,
-      child: PageView.builder(
-        controller: _pageController,
-        itemCount: adImages.length,
-        onPageChanged: (index) {
-          setState(() => _currentPage = index);
-        },
-        itemBuilder: (context, index) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.asset(adImages[index], fit: BoxFit.cover),
+  Widget _buildAdSlider(bool isTablet) {
+    final List<String> images = isTablet
+      ? [
+          'assets/images/tab_ad.png',
+          'assets/images/tab_ad.png',
+          'assets/images/tab_ad.png',
+        ]
+      : adImages;
+  return SizedBox(
+    height: isTablet ? 240 : 160,
+    width: double.infinity,
+    child: PageView.builder(
+      controller: _pageController,
+      itemCount: images.length,
+      onPageChanged: (index) => setState(() => _currentPage = index),
+      itemBuilder: (context, index) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.asset(
+              images[index],
+              fit: BoxFit.cover,
+              width: double.infinity,
             ),
-          );
-        },
-      ),
-    );
-  }
+          ),
+        );
+      },
+    ),
+  );
+}
 
-  // Dots Indicator
-  Widget _buildDotsIndicator() {
+  Widget _buildDotsIndicator(bool isTablet) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(
         adImages.length,
         (index) => Container(
           margin: const EdgeInsets.symmetric(horizontal: 4),
-          width: _currentPage == index ? 8 : 6,
-          height: _currentPage == index ? 8 : 6,
+          width: _currentPage == index ? (isTablet ? 12 : 8) : (isTablet ? 8 : 6),
+          height: _currentPage == index ? (isTablet ? 12 : 8) : (isTablet ? 8 : 6),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: _currentPage == index ? AppColors.primary : Colors.grey,

@@ -26,48 +26,44 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     AppFonts.init(context);
+    final bool isTablet = MediaQuery.of(context).size.width >= 600;
 
     return Scaffold(
       appBar: AppBar(backgroundColor: Colors.white),
       backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.all(isTablet ? 48 : 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const SizedBox(height: 20),
-
+              SizedBox(height: isTablet ? 40 : 20),
               SizedBox(
-                height: 13,
+                height: isTablet ? 26 : 13,
                 child: Image.asset(
                   "assets/images/ease_logo.png",
                   fit: BoxFit.contain,
                 ),
               ),
-
-              const SizedBox(height: 70),
-
+              SizedBox(height: isTablet ? 140 : 70),
               Text(
                 "Welcome Back!",
                 style: TextStyle(
-                  fontSize: AppFonts.titleMedium,
+                  fontSize: isTablet
+                      ? AppFonts.titleLarge
+                      : AppFonts.titleMedium,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-
-              const SizedBox(height: 8),
-
+              SizedBox(height: isTablet ? 16 : 8),
               Text(
                 "Login to your account to continue.",
                 style: TextStyle(
-                  fontSize: AppFonts.bodyMedium,
+                  fontSize: isTablet ? AppFonts.bodyLarge : AppFonts.bodyMedium,
                   color: Colors.grey,
                 ),
               ),
-
-              const SizedBox(height: 25),
-
+              SizedBox(height: isTablet ? 50 : 25),
               Form(
                 key: _formKey,
                 child: Column(
@@ -82,9 +78,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         return null;
                       },
                     ),
-
-                    const SizedBox(height: 16),
-
+                    SizedBox(height: isTablet ? 32 : 16),
                     CustomTextFormField(
                       controller: passwordController,
                       hintText: "Password",
@@ -96,9 +90,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         return null;
                       },
                     ),
-
-                    const SizedBox(height: 12),
-
+                    SizedBox(height: isTablet ? 24 : 12),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -116,7 +108,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             Text(
                               "Remember me",
                               style: TextStyle(
-                                fontSize: AppFonts.labelMedium,
+                                fontSize: isTablet
+                                    ? AppFonts.bodyMedium
+                                    : AppFonts.labelMedium,
                               ),
                             ),
                           ],
@@ -126,7 +120,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: Text(
                             "Forgot Password?",
                             style: TextStyle(
-                              fontSize: AppFonts.labelMedium,
+                              fontSize: isTablet
+                                  ? AppFonts.bodyMedium
+                                  : AppFonts.labelMedium,
                               fontStyle: FontStyle.italic,
                               fontWeight: FontWeight.w500,
                               color: Colors.black,
@@ -135,9 +131,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ],
                     ),
-
-                    const SizedBox(height: 20),
-
+                    SizedBox(height: isTablet ? 40 : 20),
                     CustomButton(
                       text: "Login",
                       onPressed: () {
@@ -159,16 +153,16 @@ class _LoginScreenState extends State<LoginScreen> {
                         }
                       },
                     ),
-
-                    const SizedBox(height: 20),
-
+                    SizedBox(height: isTablet ? 40 : 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
                           "Don’t have an account? ",
                           style: TextStyle(
-                            fontSize: AppFonts.bodySmall,
+                            fontSize: isTablet
+                                ? AppFonts.bodyMedium
+                                : AppFonts.bodySmall,
                             fontStyle: FontStyle.italic,
                           ),
                         ),
@@ -177,46 +171,43 @@ class _LoginScreenState extends State<LoginScreen> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) =>
-                                    const SignupScreen(),
+                                builder: (context) => const SignupScreen(),
                               ),
                             );
                           },
                           child: Text(
                             "Create one.",
                             style: TextStyle(
-                              fontSize: AppFonts.bodySmall,
+                              fontSize: isTablet
+                                  ? AppFonts.bodyMedium
+                                  : AppFonts.bodySmall,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
                       ],
                     ),
-
-                    const SizedBox(height: 20),
-
+                    SizedBox(height: isTablet ? 40 : 20),
                     Row(
                       children: [
-                        Expanded(
-                          child: Divider(color: Colors.grey.shade400),
-                        ),
+                        Expanded(child: Divider(color: Colors.grey.shade400)),
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: isTablet ? 20 : 10,
+                          ),
                           child: Text(
                             "or",
                             style: TextStyle(
-                              fontSize: AppFonts.labelMedium,
+                              fontSize: isTablet
+                                  ? AppFonts.bodyMedium
+                                  : AppFonts.labelMedium,
                             ),
                           ),
                         ),
-                        Expanded(
-                          child: Divider(color: Colors.grey.shade400),
-                        ),
+                        Expanded(child: Divider(color: Colors.grey.shade400)),
                       ],
                     ),
-
-                    const SizedBox(height: 20),
-
+                    SizedBox(height: isTablet ? 40 : 20),
                     CustomButton(
                       leadingIcon: FontAwesomeIcons.google,
                       text: "Continue with Google",

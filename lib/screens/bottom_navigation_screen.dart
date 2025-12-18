@@ -3,6 +3,7 @@ import 'package:project_ease/screens/bottom_navigation_screens/account_screen.da
 import 'package:project_ease/screens/bottom_navigation_screens/cart_screen.dart';
 import 'package:project_ease/screens/bottom_navigation_screens/home_screen.dart';
 import 'package:project_ease/screens/bottom_navigation_screens/search_screen.dart';
+import 'package:project_ease/utils/app_fonts.dart';
 
 class BottomNavigationScreen extends StatefulWidget {
   const BottomNavigationScreen({super.key});
@@ -15,26 +16,36 @@ class _BottomNavigationScreenState extends State<BottomNavigationScreen> {
 
   int _selectedIndex = 0;
 
-  List<Widget> lstBottomScreen = [
-    const HomeScreen(),
-    const SearchScreen(),
-    const CartScreen(),
-    const AccountScreen()
-  ];
+  late final List<Widget> lstBottomScreen;
+
+  @override
+  void initState() {
+    super.initState();
+    lstBottomScreen = const [
+      HomeScreen(),
+      SearchScreen(),
+      CartScreen(),
+      AccountScreen(),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
+    AppFonts.init(context);
+    final bool isTablet = MediaQuery.of(context).size.width >= 600;
+
     return Scaffold(
       body: lstBottomScreen[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
+        iconSize: isTablet ? 42 : 30,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
           BottomNavigationBarItem(icon: Icon(Icons.search), label: "Search"),
           BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: "Cart"),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile")
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
         ],
         currentIndex: _selectedIndex,
-        onTap: (index){
+        onTap: (index) {
           setState(() {
             _selectedIndex = index;
           });

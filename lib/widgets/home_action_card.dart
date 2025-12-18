@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:project_ease/utils/app_fonts.dart';
 
 class HomeActionCard extends StatelessWidget {
   final IconData icon;
@@ -14,6 +15,9 @@ class HomeActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppFonts.init(context);
+    final bool isTablet = MediaQuery.of(context).size.width >= 600;
+
     return Card(
       color: Colors.grey.shade100,
       shape: RoundedRectangleBorder(
@@ -26,12 +30,19 @@ class HomeActionCard extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 36, color: Colors.black),
-            const SizedBox(height: 8),
+            Icon(
+              icon,
+              size: isTablet ? 42 : 36,
+              color: Colors.black,
+            ),
+            SizedBox(height: isTablet ? 12 : 8),
             Text(
               label,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+              style: TextStyle(
+                fontSize: isTablet ? AppFonts.labelMedium : AppFonts.labelMedium,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ],
         ),

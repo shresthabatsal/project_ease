@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:project_ease/utils/app_fonts.dart';
 
 class CustomTextFormField extends StatefulWidget {
   const CustomTextFormField({
@@ -23,18 +24,27 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
 
   @override
   Widget build(BuildContext context) {
+    AppFonts.init(context);
+    final bool isTablet = MediaQuery.of(context).size.width >= 600;
+
     return TextFormField(
       controller: widget.controller,
       obscureText: widget.isPassword ? _obscureText : false,
       decoration: InputDecoration(
         hintText: widget.hintText,
         labelText: widget.hintText,
-        // Eye button
+        hintStyle: TextStyle(
+          fontSize: isTablet ? AppFonts.bodyLarge : AppFonts.bodyMedium,
+        ),
+        labelStyle: TextStyle(
+          fontSize: isTablet ? AppFonts.bodyLarge : AppFonts.bodyMedium,
+        ),
         suffixIcon: widget.isPassword
             ? IconButton(
                 icon: Icon(
                   _obscureText ? Icons.visibility_off : Icons.visibility,
                   color: Colors.grey,
+                  size: isTablet ? 28 : 20,
                 ),
                 onPressed: () {
                   setState(() {
@@ -43,6 +53,9 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
                 },
               )
             : null,
+      ),
+      style: TextStyle(
+        fontSize: isTablet ? AppFonts.bodyLarge : AppFonts.bodyMedium,
       ),
       validator: widget.validator,
     );
