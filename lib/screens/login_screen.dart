@@ -4,6 +4,7 @@ import 'package:project_ease/theme/app_colors.dart';
 import 'package:project_ease/common/custom_snackbar.dart';
 import 'package:project_ease/screens/bottom_navigation_screen.dart';
 import 'package:project_ease/screens/signup_screen.dart';
+import 'package:project_ease/utils/app_fonts.dart';
 import 'package:project_ease/widgets/custom_button.dart';
 import 'package:project_ease/widgets/custom_text_form_field.dart';
 
@@ -24,6 +25,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    AppFonts.init(context);
+
     return Scaffold(
       appBar: AppBar(backgroundColor: Colors.white),
       backgroundColor: Colors.white,
@@ -34,6 +37,7 @@ class _LoginScreenState extends State<LoginScreen> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(height: 20),
+
               SizedBox(
                 height: 13,
                 child: Image.asset(
@@ -44,16 +48,22 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 70),
 
-              const Text(
+              Text(
                 "Welcome Back!",
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: AppFonts.titleMedium,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
 
               const SizedBox(height: 8),
 
-              const Text(
+              Text(
                 "Login to your account to continue.",
-                style: TextStyle(fontSize: 16, color: Colors.grey),
+                style: TextStyle(
+                  fontSize: AppFonts.bodyMedium,
+                  color: Colors.grey,
+                ),
               ),
 
               const SizedBox(height: 25),
@@ -72,6 +82,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         return null;
                       },
                     ),
+
                     const SizedBox(height: 16),
 
                     CustomTextFormField(
@@ -102,14 +113,20 @@ class _LoginScreenState extends State<LoginScreen> {
                                 });
                               },
                             ),
-                            const Text("Remember me"),
+                            Text(
+                              "Remember me",
+                              style: TextStyle(
+                                fontSize: AppFonts.labelMedium,
+                              ),
+                            ),
                           ],
                         ),
                         GestureDetector(
                           onTap: () {},
-                          child: const Text(
+                          child: Text(
                             "Forgot Password?",
                             style: TextStyle(
+                              fontSize: AppFonts.labelMedium,
                               fontStyle: FontStyle.italic,
                               fontWeight: FontWeight.w500,
                               color: Colors.black,
@@ -134,7 +151,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => const BottomNavigationScreen(),
+                                builder: (context) =>
+                                    const BottomNavigationScreen(),
                               ),
                             );
                           });
@@ -147,17 +165,29 @@ class _LoginScreenState extends State<LoginScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text(
+                        Text(
                           "Don’t have an account? ",
-                          style: TextStyle(fontStyle: FontStyle.italic),
+                          style: TextStyle(
+                            fontSize: AppFonts.bodySmall,
+                            fontStyle: FontStyle.italic,
+                          ),
                         ),
                         GestureDetector(
                           onTap: () {
-                            Navigator.push(context, MaterialPageRoute(builder: (context) => const SignupScreen()));
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const SignupScreen(),
+                              ),
+                            );
                           },
-                          child: const Text(
+                          child: Text(
                             "Create one.",
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              fontSize: AppFonts.bodySmall,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ],
@@ -167,12 +197,21 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     Row(
                       children: [
-                        Expanded(child: Divider(color: Colors.grey.shade400)),
-                        const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 10),
-                          child: Text("or"),
+                        Expanded(
+                          child: Divider(color: Colors.grey.shade400),
                         ),
-                        Expanded(child: Divider(color: Colors.grey.shade400)),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          child: Text(
+                            "or",
+                            style: TextStyle(
+                              fontSize: AppFonts.labelMedium,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Divider(color: Colors.grey.shade400),
+                        ),
                       ],
                     ),
 

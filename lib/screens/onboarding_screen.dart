@@ -48,12 +48,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         curve: Curves.easeInOut,
       );
     } else {
-      Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginScreen()));
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+      );
     }
   }
 
   void _skip() {
-    Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginScreen()));
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
+    );
   }
 
   @override
@@ -85,21 +91,23 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             Text(
                               slide['title']!,
                               style: TextStyle(
-                                  fontSize: AppFonts.title,
-                                  fontWeight: FontWeight.bold),
+                                fontSize: AppFonts.titleLarge,
+                                fontWeight: FontWeight.bold,
+                              ),
                               textAlign: TextAlign.center,
                             ),
-                        const SizedBox(height: 8),
-                        const SizedBox(height: 8),
-
-                        // Subtitle
+                            const SizedBox(height: 8),
                             const SizedBox(height: 8),
 
-                        // Subtitle
+                            const SizedBox(height: 8),
+
+                            // Subtitle
                             Text(
                               slide['subtitle']!,
                               style: TextStyle(
-                                  fontSize: AppFonts.subtitle, color: Colors.grey),
+                                fontSize: AppFonts.bodyMedium,
+                                color: Colors.grey,
+                              ),
                               textAlign: TextAlign.center,
                             ),
                             Expanded(
@@ -131,7 +139,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     onPressed: _skip,
                     child: Text(
                       "Skip",
-                      style: TextStyle(color: Colors.grey.shade600),
+                      style: TextStyle(color: Colors.grey.shade600,
+                      fontSize: AppFonts.bodyLarge,),
                     ),
                   ),
 
@@ -157,7 +166,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     onPressed: _nextPage,
                     child: Text(
                       _currentPage == _slides.length - 1 ? "Done" : "Next",
-                      style: const TextStyle(
+                      style: TextStyle(
+                        fontSize: AppFonts.bodyLarge,
                         color: Colors.black,
                         fontWeight: FontWeight.w500,
                       ),
