@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:project_ease/theme/app_colors.dart';
 import 'package:project_ease/widgets/home_action_card.dart';
+import 'package:project_ease/widgets/product_card.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -68,64 +69,123 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          const SizedBox(height: 16),
-          _buildAdSlider(),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            const SizedBox(height: 16),
+            _buildAdSlider(),
 
-          const SizedBox(height: 12),
-          _buildDotsIndicator(),
+            const SizedBox(height: 12),
+            _buildDotsIndicator(),
 
-          const SizedBox(height: 12),
+            const SizedBox(height: 12),
 
-          // Grid
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: GridView.count(
-              crossAxisCount: 4,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              children: [
-                HomeActionCard(
-                  icon: Icons.shopping_basket_sharp,
-                  label: 'Grocery',
-                  onTap: () {},
-                ),
-                HomeActionCard(
-                  icon: Icons.checkroom,
-                  label: 'Clothing',
-                  onTap: () {},
-                ),
-                HomeActionCard(
-                  icon: Icons.cleaning_services,
-                  label: 'Household',
-                  onTap: () {},
-                ),
-                HomeActionCard(
-                  icon: Icons.devices,
-                  label: 'Electronics',
-                  onTap: () {},
-                ),
-                HomeActionCard(icon: Icons.spa, label: 'Care', onTap: () {}),
-                HomeActionCard(
-                  icon: Icons.health_and_safety,
-                  label: 'Health',
-                  onTap: () {},
-                ),
-                HomeActionCard(
-                  icon: Icons.edit,
-                  label: 'Stationery',
-                  onTap: () {},
-                ),
-                HomeActionCard(
-                  icon: Icons.child_friendly,
-                  label: 'Baby',
-                  onTap: () {},
-                ),
-              ],
+            // Grid
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: GridView.count(
+                crossAxisCount: 4,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                children: [
+                  HomeActionCard(
+                    icon: Icons.shopping_basket_sharp,
+                    label: 'Grocery',
+                    onTap: () {},
+                  ),
+                  HomeActionCard(
+                    icon: Icons.checkroom,
+                    label: 'Clothing',
+                    onTap: () {},
+                  ),
+                  HomeActionCard(
+                    icon: Icons.cleaning_services,
+                    label: 'Household',
+                    onTap: () {},
+                  ),
+                  HomeActionCard(
+                    icon: Icons.devices,
+                    label: 'Electronics',
+                    onTap: () {},
+                  ),
+                  HomeActionCard(icon: Icons.spa, label: 'Care', onTap: () {}),
+                  HomeActionCard(
+                    icon: Icons.health_and_safety,
+                    label: 'Health',
+                    onTap: () {},
+                  ),
+                  HomeActionCard(
+                    icon: Icons.edit,
+                    label: 'Stationery',
+                    onTap: () {},
+                  ),
+                  HomeActionCard(
+                    icon: Icons.child_friendly,
+                    label: 'Baby',
+                    onTap: () {},
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: const Text(
+                  'FOR YOU',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ),
+
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: GridView(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisExtent: 248,
+                ),
+                children: [
+                  ProductCard(
+                    imagePath: 'assets/images/coat.png',
+                    name: 'Product 1',
+                    price: 'NPR 700',
+                    isFavorite: false,
+                    onFavoriteTap: () {},
+                    onTap: () {},
+                  ),
+                  ProductCard(
+                    imagePath: 'assets/images/coat.png',
+                    name: 'Product 2',
+                    price: 'NPR 60',
+                    isFavorite: false,
+                    onFavoriteTap: () {},
+                    onTap: () {},
+                  ),
+                  ProductCard(
+                    imagePath: 'assets/images/coat.png',
+                    name: 'Product 3',
+                    price: 'NPR 890',
+                    isFavorite: false,
+                    onFavoriteTap: () {},
+                    onTap: () {},
+                  ),
+                  ProductCard(
+                    imagePath: 'assets/images/coat.png',
+                    name: 'Product 4',
+                    price: 'NPR 200',
+                    isFavorite: false,
+                    onFavoriteTap: () {},
+                    onTap: () {},
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
