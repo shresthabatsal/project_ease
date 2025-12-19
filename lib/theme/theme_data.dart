@@ -41,7 +41,14 @@ ThemeData getApplicationTheme() {
         borderSide: BorderSide(color: AppColors.primary, width: 2),
       ),
 
-      floatingLabelStyle: const TextStyle(color: AppColors.primary),
+      labelStyle: const TextStyle(color: Colors.grey),
+
+      floatingLabelStyle: WidgetStateTextStyle.resolveWith((states) {
+        if (states.contains(WidgetState.focused)) {
+          return TextStyle(color: AppColors.primary);
+        }
+        return const TextStyle(color: Colors.grey);
+      }),
     ),
 
     // App Bar Theme
