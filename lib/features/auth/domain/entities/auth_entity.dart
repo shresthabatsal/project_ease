@@ -4,15 +4,15 @@ class AuthEntity extends Equatable {
   final String? authId;
   final String fullName;
   final String email;
-  final String phone;
-  final String password;
+  final String? phoneNumber;
+  final String? password;
 
   const AuthEntity({
     this.authId,
     required this.fullName,
     required this.email,
-    required this.phone,
-    required this.password,
+    this.phoneNumber,
+    this.password,
   });
 
   @override
@@ -20,7 +20,7 @@ class AuthEntity extends Equatable {
         authId,
         fullName,
         email,
-        phone,
+        phoneNumber,
         password,
       ];
 }
