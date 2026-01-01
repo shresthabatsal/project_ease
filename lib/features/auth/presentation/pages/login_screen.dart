@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:project_ease/theme/app_colors.dart';
+import 'package:project_ease/apps/theme/app_colors.dart';
 import 'package:project_ease/common/custom_snackbar.dart';
-import 'package:project_ease/screens/bottom_navigation_screen.dart';
-import 'package:project_ease/screens/signup_screen.dart';
-import 'package:project_ease/utils/app_fonts.dart';
-import 'package:project_ease/widgets/custom_button.dart';
-import 'package:project_ease/widgets/custom_text_form_field.dart';
+import 'package:project_ease/core/utils/app_fonts.dart';
+import 'package:project_ease/core/widgets/custom_button.dart';
+import 'package:project_ease/core/widgets/custom_text_form_field.dart';
+import 'package:project_ease/features/auth/presentation/pages/signup_screen.dart';
+import 'package:project_ease/features/dashboard/presentation/bottom_navigation_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});

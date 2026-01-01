@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:project_ease/screens/bottom_navigation_screens/account_screen.dart';
-import 'package:project_ease/screens/bottom_navigation_screens/cart_screen.dart';
-import 'package:project_ease/screens/bottom_navigation_screens/home_screen.dart';
-import 'package:project_ease/screens/bottom_navigation_screens/search_screen.dart';
-import 'package:project_ease/utils/app_fonts.dart';
+import 'package:project_ease/features/dashboard/presentation/bottom_navigation_screens/account_screen.dart';
+import 'package:project_ease/features/dashboard/presentation/bottom_navigation_screens/cart_screen.dart';
+import 'package:project_ease/features/dashboard/presentation/bottom_navigation_screens/home_screen.dart';
+import 'package:project_ease/features/dashboard/presentation/bottom_navigation_screens/search_screen.dart';
+import 'package:project_ease/core/utils/app_fonts.dart';
 
 class BottomNavigationScreen extends StatefulWidget {
   const BottomNavigationScreen({super.key});

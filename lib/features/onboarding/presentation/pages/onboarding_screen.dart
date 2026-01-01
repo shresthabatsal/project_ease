@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:project_ease/theme/app_colors.dart';
-import 'package:project_ease/screens/login_screen.dart';
-import 'package:project_ease/utils/app_fonts.dart';
+import 'package:project_ease/apps/theme/app_colors.dart';
+import 'package:project_ease/features/auth/presentation/pages/login_screen.dart';
+import 'package:project_ease/core/utils/app_fonts.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});

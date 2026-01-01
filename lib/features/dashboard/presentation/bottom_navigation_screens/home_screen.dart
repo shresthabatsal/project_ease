@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:project_ease/theme/app_colors.dart';
-import 'package:project_ease/utils/app_fonts.dart';
-import 'package:project_ease/widgets/home_action_card.dart';
-import 'package:project_ease/widgets/product_card.dart';
+import 'package:project_ease/apps/theme/app_colors.dart';
+import 'package:project_ease/core/utils/app_fonts.dart';
+import 'package:project_ease/core/widgets/home_action_card.dart';
+import 'package:project_ease/core/widgets/product_card.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});

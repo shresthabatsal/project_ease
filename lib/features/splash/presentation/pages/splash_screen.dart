@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:project_ease/screens/onboarding_screen.dart';
+import 'package:project_ease/features/onboarding/presentation/pages/onboarding_screen.dart';
 import 'package:video_player/video_player.dart';
 
 class SplashScreen extends StatefulWidget {

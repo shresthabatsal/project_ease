@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:project_ease/utils/app_fonts.dart';
+import 'package:project_ease/core/utils/app_fonts.dart';
 
 class CustomTextFormField extends StatefulWidget {
   const CustomTextFormField({
