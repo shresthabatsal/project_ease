@@ -9,12 +9,14 @@ class CustomButton extends StatelessWidget {
     required this.text,
     this.color,
     this.leadingIcon,
+    this.isLoading = false,
   });
 
   final VoidCallback onPressed;
   final String text;
   final Color? color;
   final IconData? leadingIcon;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -27,35 +29,46 @@ class CustomButton extends StatelessWidget {
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           backgroundColor: color ?? AppColors.primary,
-          padding: EdgeInsets.symmetric(
-            horizontal: isTablet ? 24 : 16,
-          ),
+          padding: EdgeInsets.symmetric(horizontal: isTablet ? 24 : 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(isTablet ? 12 : 8),
           ),
         ),
-        onPressed: onPressed,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (leadingIcon != null)
-              Icon(
-                leadingIcon,
-                color: Colors.black,
-                size: isTablet ? 28 : 20,
+        onPressed: isLoading ? null : onPressed,
+        child: isLoading
+            ? Center(
+                child: SizedBox(
+                  width: isTablet ? 28 : 20,
+                  height: isTablet ? 28 : 20,
+                  child: const CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    color: Colors.black,
+                  ),
+                ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (leadingIcon != null)
+                    Icon(
+                      leadingIcon,
+                      color: Colors.black,
+                      size: isTablet ? 28 : 20,
+                    ),
+                  if (leadingIcon != null) SizedBox(width: isTablet ? 12 : 8),
+                  Text(
+                    text,
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: isTablet
+                          ? AppFonts.bodyLarge
+                          : AppFonts.bodyMedium,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
-            if (leadingIcon != null) SizedBox(width: isTablet ? 12 : 8),
-            Text(
-              text,
-              style: TextStyle(
-                color: Colors.black,
-                fontSize: isTablet ? AppFonts.bodyLarge : AppFonts.bodyMedium,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
