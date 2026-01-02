@@ -1,10 +1,14 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 import 'package:project_ease/core/constants/hive_table_constant.dart';
 import 'package:project_ease/features/auth/data/models/auth_hive_model.dart';
-
 import 'package:path_provider/path_provider.dart';
 
-class AuthHiveService {
+final hiveServiceProvider = Provider<HiveService>((ref) {
+  return HiveService();
+});
+
+class HiveService {
   Future<void> init() async {
     final directory = await getApplicationDocumentsDirectory();
     final path = "${directory.path}/${HiveTableConstant.dbName}";
@@ -42,7 +46,7 @@ class AuthHiveService {
   }
 
   // Login
-  AuthHiveModel? loginUser(String email, String password) {
+  Future<AuthHiveModel?> loginUser(String email, String password) async {
     final users = _authBox.values.where(
       (user) => user.email == email && user.password == password,
     );
@@ -53,14 +57,13 @@ class AuthHiveService {
   }
 
   // Get Current User
-  AuthHiveModel? getCurrentUser(String authId) {
-    return _authBox.get(authId);
+  AuthHiveModel? getCurrentUser() {
+    if (_authBox.isEmpty) return null;
+    return _authBox.values.first;
   }
 
   // Logout
-  Future<void> logoutUser(String authId) async {
-    await _authBox.delete(authId);
-  }
+  Future<void> logoutUser() async {}
 
   // Is Email Exists
   bool isEmailExists(String email) {
