@@ -1,6 +1,7 @@
   import 'package:flutter/material.dart';
   import 'package:flutter_riverpod/flutter_riverpod.dart';
   import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:project_ease/apps/routes/app_routes.dart';
   import 'package:project_ease/apps/theme/app_colors.dart';
   import 'package:project_ease/core/utils/snackbar_utils.dart';
   import 'package:project_ease/features/auth/presentation/pages/login_screen.dart';
@@ -39,6 +40,25 @@
       super.dispose();
     }
 
+    void _clearForm() {
+      _formKey.currentState?.reset();
+
+      fullNameController.clear();
+      phoneController.clear();
+      emailController.clear();
+      passwordController.clear();
+      confirmPasswordController.clear();
+
+      setState(() {
+        agreeTerms = false;
+      });
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+      FocusManager.instance.primaryFocus?.unfocus();
+      });
+    }
+
+
     Future<void> _handleSignup() async {
       if (!agreeTerms) {
         SnackbarUtils.showWarning(
@@ -76,6 +96,7 @@
           );
         } else if (next.status == AuthStatus.registered) {
           SnackbarUtils.showSuccess(context, "Registration Successful.");
+          _clearForm();
         }
       });
 
@@ -258,10 +279,7 @@
                           ),
                         ),
                         GestureDetector(
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => const LoginScreen()),
-                          ),
+                          onTap: () => AppRoutes.push(context, const LoginScreen()),
                           child: Text(
                             "Login.",
                             style: TextStyle(

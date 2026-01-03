@@ -27,7 +27,7 @@ class AuthViewModel extends Notifier<AuthState>{
     required String password,
   }) async {
     state = state.copyWith(status: AuthStatus.loading);
-    await Future.delayed(const Duration(seconds: 2)); // Simulate delay
+    // await Future.delayed(const Duration(seconds: 2)); // Simulate delay
     final result = await _registerUsecase(
       RegisterUsecaseParams(
         fullName: fullName,
@@ -55,7 +55,7 @@ class AuthViewModel extends Notifier<AuthState>{
     required String password,
   }) async {
     state = state.copyWith(status: AuthStatus.loading);
-    await Future.delayed(const Duration(seconds: 2)); // Simulate delay
+    // await Future.delayed(const Duration(seconds: 2)); // Simulate delay
     final result = await _loginUsecase(
       LoginUsecaseParams(
         email: email,

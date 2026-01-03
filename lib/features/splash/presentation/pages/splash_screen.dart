@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:project_ease/apps/routes/app_routes.dart';
 import 'package:project_ease/features/onboarding/presentation/pages/onboarding_screen.dart';
 import 'package:video_player/video_player.dart';
 
@@ -25,10 +26,7 @@ class _SplashScreenState extends State<SplashScreen> {
         // Navigate after video ends
         _controller.addListener(() {
           if (_controller.value.position >= _controller.value.duration) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const OnboardingScreen()),
-            );
+            AppRoutes.pushReplacement(context, const OnboardingScreen());
           }
         });
       });

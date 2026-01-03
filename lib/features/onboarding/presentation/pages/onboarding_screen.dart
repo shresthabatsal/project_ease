@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:project_ease/apps/routes/app_routes.dart';
 import 'package:project_ease/apps/theme/app_colors.dart';
 import 'package:project_ease/features/auth/presentation/pages/login_screen.dart';
 import 'package:project_ease/core/utils/app_fonts.dart';
@@ -48,18 +49,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         curve: Curves.easeInOut,
       );
     } else {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
-      );
+      AppRoutes.pushReplacement(context, const LoginScreen());
     }
   }
 
   void _skip() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const LoginScreen()),
-    );
+    AppRoutes.pushReplacement(context, const LoginScreen());
   }
 
   @override

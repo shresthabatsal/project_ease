@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:project_ease/apps/routes/app_routes.dart';
 import 'package:project_ease/apps/theme/app_colors.dart';
 import 'package:project_ease/core/utils/snackbar_utils.dart';
 import 'package:project_ease/core/utils/app_fonts.dart';
@@ -45,10 +46,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   void _navigateToSignup() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const SignupScreen()),
-    );
+    AppRoutes.push(context, const SignupScreen());
   }
 
   void _handleForgotPassword() {}
@@ -64,12 +62,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     ref.listen<AuthState>(authViewModelProvider, (previous, next) {
       if (next.status == AuthStatus.authenticated) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const BottomNavigationScreen(),
-          ),
-        );
+        SnackbarUtils.showSuccess(context, "Login Successful!");
+
+        Future.delayed(const Duration(milliseconds: 300), () {
+        AppRoutes.pushReplacement(context, const BottomNavigationScreen());
+        });
       } else if (next.status == AuthStatus.error && next.errorMessage != null) {
         SnackbarUtils.showError(context, next.errorMessage!);
       }
