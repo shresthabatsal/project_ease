@@ -68,6 +68,7 @@ class ApiClient {
 
   // ===== HTTP METHODS =====
 
+  // GET
   Future<Response> get(
     String path, {
     Map<String, dynamic>? queryParameters,
@@ -76,6 +77,7 @@ class ApiClient {
     return _dio.get(path, queryParameters: queryParameters, options: options);
   }
 
+  // POST
   Future<Response> post(
     String path, {
     dynamic data,
@@ -90,6 +92,7 @@ class ApiClient {
     );
   }
 
+  // PUT
   Future<Response> put(
     String path, {
     dynamic data,
@@ -104,6 +107,7 @@ class ApiClient {
     );
   }
 
+  // DELETE
   Future<Response> delete(
     String path, {
     dynamic data,
