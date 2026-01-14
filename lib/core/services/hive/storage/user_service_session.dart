@@ -24,21 +24,18 @@ class UserSessionService {
   static const String _keyUserEmail = 'user_email';
   static const String _keyUserFullName = 'user_full_name';
   static const String _keyUserPhoneNumber = 'user_phone_number';
-  static const String _keyAuthToken = 'auth_token';
 
   // Save User Session
   Future<void> saveUserSession({
     required String userId,
     required String email,
     required String fullName,
-    String? phoneNumber,
-    required String authToken,
+    String? phoneNumber
   }) async {
     await _prefs.setBool(_keyIsLoggedIn, true);
     await _prefs.setString(_keyUserId, userId);
     await _prefs.setString(_keyUserEmail, email);
     await _prefs.setString(_keyUserFullName, fullName);
-    await _prefs.setString(_keyAuthToken, authToken);
 
     if (phoneNumber != null) {
       await _prefs.setString(_keyUserPhoneNumber, phoneNumber);
@@ -52,7 +49,6 @@ class UserSessionService {
     await _prefs.remove(_keyUserEmail);
     await _prefs.remove(_keyUserFullName);
     await _prefs.remove(_keyUserPhoneNumber);
-    await _prefs.remove(_keyAuthToken);
   }
 
   bool isLoggedIn() {
@@ -73,9 +69,5 @@ class UserSessionService {
 
   String? getUserPhoneNumber() {
     return _prefs.getString(_keyUserPhoneNumber);
-  }
-
-  String? getAuthToken() {
-    return _prefs.getString(_keyAuthToken);
   }
 }

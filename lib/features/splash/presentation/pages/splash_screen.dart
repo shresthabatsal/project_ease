@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:project_ease/apps/routes/app_routes.dart';
+import 'package:project_ease/core/services/hive/storage/user_service_session.dart';
+import 'package:project_ease/features/dashboard/presentation/bottom_navigation_screen.dart';
 import 'package:project_ease/features/onboarding/presentation/pages/onboarding_screen.dart';
 import 'package:video_player/video_player.dart';
 
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends ConsumerState<SplashScreen> {
   late VideoPlayerController _controller;
 
   @override
@@ -26,7 +29,7 @@ class _SplashScreenState extends State<SplashScreen> {
         // Navigate after video ends
         _controller.addListener(() {
           if (_controller.value.position >= _controller.value.duration) {
-            AppRoutes.pushReplacement(context, const OnboardingScreen());
+            _navigateNext();
           }
         });
       });
@@ -64,4 +67,18 @@ class _SplashScreenState extends State<SplashScreen> {
       ),
     );
   }
+  
+  void _navigateNext() {
+  if (!mounted) return;
+
+  final userSessionService = ref.read(userSessionServiceProvider);
+  final isLoggedIn = userSessionService.isLoggedIn();
+
+  if (isLoggedIn) {
+    AppRoutes.pushReplacement(context, const BottomNavigationScreen());
+  } else {
+    AppRoutes.pushReplacement(context, const OnboardingScreen());
+  }
+}
+
 }
