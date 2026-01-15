@@ -1,8 +1,16 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:project_ease/core/api/api_client.dart';
 import 'package:project_ease/core/api/api_endpoints.dart';
 import 'package:project_ease/core/services/hive/storage/user_service_session.dart';
 import 'package:project_ease/features/auth/data/datasources/auth_datasource.dart';
 import 'package:project_ease/features/auth/data/models/auth_api_model.dart';
+
+final authRemoteDatasourceProvider = Provider<IAuthRemoteDatasource>((ref) {
+  return AuthRemoteDatasource(
+    apiClient: ref.read(apiClientProvider),
+    userSessionService: ref.read(userSessionServiceProvider),
+  );
+});
 
 class AuthRemoteDatasource implements IAuthRemoteDatasource {
   final ApiClient _apiClient;

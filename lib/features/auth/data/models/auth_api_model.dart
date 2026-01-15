@@ -7,7 +7,6 @@ class AuthApiModel {
   final String email;
   final String? phoneNumber;
   final String? password;
-  final String? confirmPassword;
 
   AuthApiModel({
     this.id,
@@ -15,7 +14,6 @@ class AuthApiModel {
     required this.email,
     this.phoneNumber,
     this.password,
-    this.confirmPassword,
   });
 
   // To Json
@@ -24,8 +22,7 @@ class AuthApiModel {
       'fullName': fullName,
       'email': email,
       'phoneNumber': phoneNumber,
-      'password': password,
-      'confirmPassword': confirmPassword,
+      'password': password
     };
   }
 
