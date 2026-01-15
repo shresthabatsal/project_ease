@@ -29,9 +29,25 @@ class AuthRemoteDatasource implements IAuthRemoteDatasource {
   }
 
   @override
-  Future<AuthApiModel?> loginUser(String email, String password) {
-    // TODO: implement loginUser
-    throw UnimplementedError();
+  Future<AuthApiModel?> loginUser(String email, String password) async {
+    final response = await _apiClient.post(
+    ApiEndpoints.login,
+    data: {'email': email, 'password': password},
+  );
+
+  if (response.data["success"] == true) {
+    final data = response.data["data"] as Map<String, dynamic>;
+    final user = AuthApiModel.fromJson(data);
+
+    await _userSessionService.saveUserSession(
+      userId: user.id!,
+      email: user.email,
+      phoneNumber: user.phoneNumber,
+      fullName: user.fullName,
+    );
+    return user;
+  }
+  return null;
   }
 
   @override
