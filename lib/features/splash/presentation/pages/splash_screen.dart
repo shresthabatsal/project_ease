@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:project_ease/apps/routes/app_routes.dart';
-import 'package:project_ease/core/services/hive/storage/user_service_session.dart';
+import 'package:project_ease/core/services/storage/user_service_session.dart';
 import 'package:project_ease/features/dashboard/presentation/bottom_navigation_screen.dart';
 import 'package:project_ease/features/onboarding/presentation/pages/onboarding_screen.dart';
 import 'package:video_player/video_player.dart';

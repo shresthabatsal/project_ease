@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:project_ease/core/services/hive/hive_service.dart';
-import 'package:project_ease/core/services/hive/storage/user_service_session.dart';
+import 'package:project_ease/core/services/storage/user_service_session.dart';
 import 'package:project_ease/features/auth/data/datasources/auth_datasource.dart';
 import 'package:project_ease/features/auth/data/models/auth_hive_model.dart';
 
