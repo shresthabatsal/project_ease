@@ -1,4 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:project_ease/apps/theme/app_colors.dart';
 import 'package:project_ease/core/widgets/custom_text_form_field.dart';
 
@@ -14,6 +18,115 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _phoneController = TextEditingController();
+
+  File? _profileImage;
+  final ImagePicker _imagePicker = ImagePicker();
+
+  Future<bool> _requestPermission(Permission permission) async {
+    final status = await permission.status;
+
+    if (status.isGranted) return true;
+
+    if (status.isDenied) {
+      final result = await permission.request();
+      return result.isGranted;
+    }
+
+    if (status.isPermanentlyDenied) {
+      _showPermissionDeniedDialog();
+      return false;
+    }
+
+    return false;
+  }
+
+  void _showPermissionDeniedDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Permission Required"),
+        content: const Text(
+          "Please enable camera or gallery permission from settings to continue.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              openAppSettings();
+            },
+            child: const Text("Open Settings"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _pickFromCamera() async {
+    final hasPermission = await _requestPermission(Permission.camera);
+    if (!hasPermission) return;
+
+    final XFile? photo = await _imagePicker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 80,
+    );
+
+    if (photo != null) {
+      setState(() {
+        _profileImage = File(photo.path);
+      });
+    }
+  }
+
+  Future<void> _pickFromGallery() async {
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 80,
+      );
+
+      if (image != null) {
+        setState(() {
+          _profileImage = File(image.path);
+        });
+      }
+    } catch (_) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Unable to access gallery")));
+    }
+  }
+
+  void _confirmRemovePhoto() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Remove Profile Picture"),
+        content: const Text(
+          "Are you sure you want to remove your profile photo?",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              setState(() {
+                _profileImage = null;
+              });
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text("Remove"),
+          ),
+        ],
+      ),
+    );
+  }
 
   void _showProfileOptions() {
     showModalBottomSheet(
@@ -41,40 +154,47 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
               ListTile(
                 leading: const Icon(Icons.visibility),
-                title: const Text("View Profile Picture"),
+                title: const Text("View profile picture"),
                 onTap: () {
                   Navigator.pop(context);
-                  // TODO: Open full screen image preview
+                  if (_profileImage != null) {
+                    showDialog(
+                      context: context,
+                      builder: (_) => Dialog(
+                        child: Image.file(_profileImage!, fit: BoxFit.cover),
+                      ),
+                    );
+                  }
                 },
               ),
 
               ListTile(
                 leading: const Icon(Icons.photo_library),
-                title: const Text("Choose From Gallery"),
+                title: const Text("Choose from gallery"),
                 onTap: () {
                   Navigator.pop(context);
-                  // TODO: Pick image from gallery
+                  _pickFromGallery();
                 },
               ),
 
               ListTile(
                 leading: const Icon(Icons.camera_alt),
-                title: const Text("Take Photo"),
+                title: const Text("Take photo"),
                 onTap: () {
                   Navigator.pop(context);
-                  // TODO: Open camera
+                  _pickFromCamera();
                 },
               ),
 
               ListTile(
                 leading: const Icon(Icons.delete, color: Colors.red),
                 title: const Text(
-                  "Remove Profile Picture",
+                  "Remove profile picture",
                   style: TextStyle(color: Colors.red),
                 ),
                 onTap: () {
                   Navigator.pop(context);
-                  // TODO: Remove profile picture
+                  _confirmRemovePhoto();
                 },
               ),
 
@@ -118,28 +238,26 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   CircleAvatar(
                     radius: 55,
                     backgroundColor: Colors.grey.shade200,
-                    child: const Icon(
-                      Icons.person,
-                      size: 60,
-                      color: Colors.grey,
-                    ),
+                    backgroundImage: _profileImage != null
+                        ? FileImage(_profileImage!)
+                        : null,
+                    child: _profileImage == null
+                        ? const Icon(Icons.person, size: 60, color: Colors.grey)
+                        : null,
                   ),
-                  Positioned(
-                    bottom: 4,
-                    right: 4,
-                    child: CircleAvatar(
-                      radius: 14,
-                      backgroundColor: AppColors.primary,
-                      child: const Icon(
-                        Icons.edit,
-                        size: 16,
-                        color: Colors.black,
-                      ),
+                  CircleAvatar(
+                    radius: 14,
+                    backgroundColor: AppColors.primary,
+                    child: const Icon(
+                      Icons.edit,
+                      size: 16,
+                      color: Colors.black,
                     ),
                   ),
                 ],
               ),
             ),
+
             const SizedBox(height: 30),
 
             // Full Name
