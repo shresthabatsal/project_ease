@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:project_ease/core/api/api_client.dart';
 import 'package:project_ease/core/api/api_endpoints.dart';
+import 'package:project_ease/core/services/storage/token_service.dart';
 import 'package:project_ease/core/services/storage/user_service_session.dart';
 import 'package:project_ease/features/auth/data/datasources/auth_datasource.dart';
 import 'package:project_ease/features/auth/data/models/auth_api_model.dart';
@@ -9,18 +10,22 @@ final authRemoteDatasourceProvider = Provider<IAuthRemoteDatasource>((ref) {
   return AuthRemoteDatasource(
     apiClient: ref.read(apiClientProvider),
     userSessionService: ref.read(userSessionServiceProvider),
+    tokenService: ref.read(tokenServiceProvider),
   );
 });
 
 class AuthRemoteDatasource implements IAuthRemoteDatasource {
   final ApiClient _apiClient;
   final UserSessionService _userSessionService;
+  final TokenService _tokenService;
 
   AuthRemoteDatasource({
     required ApiClient apiClient,
     required UserSessionService userSessionService,
+    required TokenService tokenService,
   }) : _apiClient = apiClient,
-       _userSessionService = userSessionService;
+       _userSessionService = userSessionService,
+       _tokenService = tokenService;
 
   @override
   Future<AuthApiModel?> getuserById(String authId) {
@@ -31,23 +36,29 @@ class AuthRemoteDatasource implements IAuthRemoteDatasource {
   @override
   Future<AuthApiModel?> loginUser(String email, String password) async {
     final response = await _apiClient.post(
-    ApiEndpoints.login,
-    data: {'email': email, 'password': password},
-  );
-
-  if (response.data["success"] == true) {
-    final data = response.data["data"] as Map<String, dynamic>;
-    final user = AuthApiModel.fromJson(data);
-
-    await _userSessionService.saveUserSession(
-      userId: user.id!,
-      email: user.email,
-      phoneNumber: user.phoneNumber,
-      fullName: user.fullName,
+      ApiEndpoints.login,
+      data: {'email': email, 'password': password},
     );
-    return user;
-  }
-  return null;
+
+    if (response.data["success"] == true) {
+      final data = response.data["data"] as Map<String, dynamic>;
+      final user = AuthApiModel.fromJson(data);
+
+      // Save User Session
+      await _userSessionService.saveUserSession(
+        userId: user.id!,
+        email: user.email,
+        phoneNumber: user.phoneNumber,
+        fullName: user.fullName,
+      );
+
+      // Save Token
+      final token = response.data["token"];
+      await _tokenService.saveToken(token);
+
+      return user;
+    }
+    return null;
   }
 
   @override
