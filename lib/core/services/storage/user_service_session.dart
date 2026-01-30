@@ -24,13 +24,15 @@ class UserSessionService {
   static const String _keyUserEmail = 'user_email';
   static const String _keyUserFullName = 'user_full_name';
   static const String _keyUserPhoneNumber = 'user_phone_number';
+  static const String _keyUserProfilePicture = 'user_profile_picture';
 
   // Save User Session
   Future<void> saveUserSession({
     required String userId,
     required String email,
     required String fullName,
-    String? phoneNumber
+    String? phoneNumber,
+    String? profilePicture,
   }) async {
     await _prefs.setBool(_keyIsLoggedIn, true);
     await _prefs.setString(_keyUserId, userId);
@@ -39,6 +41,10 @@ class UserSessionService {
 
     if (phoneNumber != null) {
       await _prefs.setString(_keyUserPhoneNumber, phoneNumber);
+    }
+
+    if (profilePicture != null) {
+      await _prefs.setString(_keyUserProfilePicture, profilePicture);
     }
   }
 
@@ -49,6 +55,7 @@ class UserSessionService {
     await _prefs.remove(_keyUserEmail);
     await _prefs.remove(_keyUserFullName);
     await _prefs.remove(_keyUserPhoneNumber);
+    await _prefs.remove(_keyUserProfilePicture);
   }
 
   bool isLoggedIn() {
@@ -69,5 +76,9 @@ class UserSessionService {
 
   String? getUserPhoneNumber() {
     return _prefs.getString(_keyUserPhoneNumber);
+  }
+  
+  String? getCurrentUserProfilePicture() {
+    return _prefs.getString(_keyUserProfilePicture);
   }
 }
