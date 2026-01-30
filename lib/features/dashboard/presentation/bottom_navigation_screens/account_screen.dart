@@ -4,6 +4,7 @@ import 'package:project_ease/apps/routes/app_routes.dart';
 import 'package:project_ease/core/widgets/custom_button.dart';
 import 'package:project_ease/features/auth/presentation/pages/login_screen.dart';
 import 'package:project_ease/features/auth/presentation/view_model/auth_view_model.dart';
+import 'package:project_ease/features/profile/presentation/pages/edit_profile_screen.dart';
 
 class AccountScreen extends ConsumerWidget {
   const AccountScreen({super.key});
@@ -24,7 +25,15 @@ class AccountScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              /// Logout Button
+              // Edit Profile Button
+              CustomButton(
+                text: "Edit Profile",
+                onPressed: () {
+                  AppRoutes.push(context, const EditProfileScreen());
+                },
+              ),
+              SizedBox(height: isTablet ? 32 : 16),
+              // Logout Button
               CustomButton(
                 text: "Logout",
                 onPressed: () {
