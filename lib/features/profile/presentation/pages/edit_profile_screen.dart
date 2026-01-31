@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:project_ease/apps/theme/app_colors.dart';
+import 'package:project_ease/core/api/api_endpoints.dart';
 import 'package:project_ease/core/widgets/custom_text_form_field.dart';
 import 'package:project_ease/features/profile/presentation/state/profile_state.dart';
 import 'package:project_ease/features/profile/presentation/view_model/profile_view_model.dart';
@@ -27,6 +28,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   @override
   void initState() {
     super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(profileViewModelProvider.notifier).loadProfile();
+    });
   }
 
   @override
@@ -134,7 +139,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              ref.read(profileViewModelProvider.notifier).clearUploadedPictureUrl();
+              ref
+                  .read(profileViewModelProvider.notifier)
+                  .clearUploadedPictureUrl();
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text("Remove"),
@@ -156,7 +163,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               const SizedBox(height: 8),
-
               Container(
                 width: 40,
                 height: 4,
@@ -165,26 +171,30 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-
               const SizedBox(height: 16),
-
               ListTile(
                 leading: const Icon(Icons.visibility),
                 title: const Text("View profile picture"),
                 onTap: () {
                   Navigator.pop(context);
-                  final url = ref.read(profileViewModelProvider).uploadedProfilePictureUrl;
-                  if (url != null && url.isNotEmpty) {
+                  final currentUrl =
+                      ref
+                          .read(profileViewModelProvider)
+                          .uploadedProfilePictureUrl ??
+                      ref
+                          .read(profileViewModelProvider)
+                          .profile
+                          ?.profilePicture;
+                  if (currentUrl != null && currentUrl.isNotEmpty) {
                     showDialog(
                       context: context,
                       builder: (_) => Dialog(
-                        child: Image.network(url, fit: BoxFit.cover),
+                        child: Image.network(currentUrl, fit: BoxFit.cover),
                       ),
                     );
                   }
                 },
               ),
-
               ListTile(
                 leading: const Icon(Icons.photo_library),
                 title: const Text("Choose from gallery"),
@@ -193,7 +203,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   _pickFromGallery();
                 },
               ),
-
               ListTile(
                 leading: const Icon(Icons.camera_alt),
                 title: const Text("Take photo"),
@@ -202,7 +211,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   _pickFromCamera();
                 },
               ),
-
               ListTile(
                 leading: const Icon(Icons.delete, color: Colors.red),
                 title: const Text(
@@ -214,7 +222,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   _confirmRemovePhoto();
                 },
               ),
-
               const SizedBox(height: 8),
             ],
           ),
@@ -229,11 +236,22 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
     ref.listen<ProfileState>(profileViewModelProvider, (previous, next) {
       if (next.status == ProfileStatus.error && next.errorMessage != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(next.errorMessage!)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(next.errorMessage!)));
       }
     });
+
+    String? displayPictureUrl = profileState.uploadedProfilePictureUrl;
+
+    if (displayPictureUrl == null || displayPictureUrl.isEmpty) {
+      final filename = profileState.profile?.profilePicture;
+      if (filename != null && filename.isNotEmpty) {
+        displayPictureUrl = ApiEndpoints.profilePicture(filename);
+      }
+    }
+
+    final bool isLoading = profileState.status == ProfileStatus.loading;
 
     return Scaffold(
       appBar: AppBar(
@@ -249,38 +267,48 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           children: [
             // Profile Picture
             GestureDetector(
-              onTap: _showProfileOptions,
+              onTap: isLoading
+                  ? null
+                  : _showProfileOptions, // disable tap while loading
               child: Stack(
-                alignment: Alignment.bottomRight,
+                alignment: Alignment.center,
                 children: [
                   CircleAvatar(
                     radius: 55,
                     backgroundColor: Colors.grey.shade200,
-                    backgroundImage: profileState.uploadedProfilePictureUrl != null
-                        ? NetworkImage(profileState.uploadedProfilePictureUrl!)
+                    backgroundImage: displayPictureUrl != null
+                        ? NetworkImage(displayPictureUrl)
                         : null,
-                    child: profileState.uploadedProfilePictureUrl == null
+                    child: displayPictureUrl == null
                         ? const Icon(Icons.person, size: 60, color: Colors.grey)
                         : null,
                   ),
-                  if (profileState.status == ProfileStatus.loading)
-                    const Positioned(
+
+                  // Show centered spinner when loading
+                  if (isLoading)
+                    const SizedBox(
+                      width: 60,
+                      height: 60,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 4,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          AppColors.primary,
+                        ),
+                      ),
+                    ),
+
+                  if (!isLoading)
+                    Positioned(
                       bottom: 0,
                       right: 0,
-                      child: SizedBox(
-                        width: 28,
-                        height: 28,
-                        child: CircularProgressIndicator(strokeWidth: 3),
-                      ),
-                    )
-                  else
-                    CircleAvatar(
-                      radius: 14,
-                      backgroundColor: AppColors.primary,
-                      child: const Icon(
-                        Icons.edit,
-                        size: 16,
-                        color: Colors.black,
+                      child: CircleAvatar(
+                        radius: 14,
+                        backgroundColor: AppColors.primary,
+                        child: const Icon(
+                          Icons.edit,
+                          size: 16,
+                          color: Colors.black,
+                        ),
                       ),
                     ),
                 ],
@@ -332,7 +360,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               child: ElevatedButton(
                 onPressed: () {
                   // TODO: Later - call update profile use case here
-                  // Use uploadedProfilePictureUrl from state if changed
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,

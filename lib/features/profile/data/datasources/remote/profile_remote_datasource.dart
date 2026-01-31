@@ -69,6 +69,14 @@ class ProfileRemoteDataSource implements IProfileRemoteDataSource {
       options: Options(headers: {'Authorization': 'Bearer $token'}),
     );
 
+    final Map<String, dynamic> responseData = response.data;
+
+    if (responseData['success'] != true) {
+      throw Exception(
+        'Upload failed: ${responseData['message'] ?? 'Unknown error'}',
+      );
+    }
+
     return response.data['data'];
   }
 
