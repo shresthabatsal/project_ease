@@ -1,26 +1,42 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:project_ease/apps/theme/app_colors.dart';
 import 'package:project_ease/core/widgets/custom_text_form_field.dart';
+import 'package:project_ease/features/profile/presentation/state/profile_state.dart';
+import 'package:project_ease/features/profile/presentation/view_model/profile_view_model.dart';
 
-class EditProfileScreen extends StatefulWidget {
+class EditProfileScreen extends ConsumerStatefulWidget {
   const EditProfileScreen({super.key});
 
   @override
-  State<EditProfileScreen> createState() => _EditProfileScreenState();
+  ConsumerState<EditProfileScreen> createState() => _EditProfileScreenState();
 }
 
-class _EditProfileScreenState extends State<EditProfileScreen> {
+class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   final _fullNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _phoneController = TextEditingController();
 
-  File? _profileImage;
   final ImagePicker _imagePicker = ImagePicker();
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _fullNameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _phoneController.dispose();
+    super.dispose();
+  }
 
   Future<bool> _requestPermission(Permission permission) async {
     final status = await permission.status;
@@ -75,9 +91,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
 
     if (photo != null) {
-      setState(() {
-        _profileImage = File(photo.path);
-      });
+      await ref
+          .read(profileViewModelProvider.notifier)
+          .uploadProfilePicture(File(photo.path));
     }
   }
 
@@ -89,14 +105,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       );
 
       if (image != null) {
-        setState(() {
-          _profileImage = File(image.path);
-        });
+        await ref
+            .read(profileViewModelProvider.notifier)
+            .uploadProfilePicture(File(image.path));
       }
     } catch (_) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Unable to access gallery")));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Unable to access gallery")),
+        );
+      }
     }
   }
 
@@ -116,9 +134,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              setState(() {
-                _profileImage = null;
-              });
+              ref.read(profileViewModelProvider.notifier).clearUploadedPictureUrl();
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text("Remove"),
@@ -157,11 +173,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 title: const Text("View profile picture"),
                 onTap: () {
                   Navigator.pop(context);
-                  if (_profileImage != null) {
+                  final url = ref.read(profileViewModelProvider).uploadedProfilePictureUrl;
+                  if (url != null && url.isNotEmpty) {
                     showDialog(
                       context: context,
                       builder: (_) => Dialog(
-                        child: Image.file(_profileImage!, fit: BoxFit.cover),
+                        child: Image.network(url, fit: BoxFit.cover),
                       ),
                     );
                   }
@@ -207,16 +224,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   @override
-  void dispose() {
-    _fullNameController.dispose();
-    _emailController.dispose();
-    _passwordController.dispose();
-    _phoneController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final profileState = ref.watch(profileViewModelProvider);
+
+    ref.listen<ProfileState>(profileViewModelProvider, (previous, next) {
+      if (next.status == ProfileStatus.error && next.errorMessage != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(next.errorMessage!)),
+        );
+      }
+    });
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("EDIT PROFILE"),
@@ -238,22 +256,33 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   CircleAvatar(
                     radius: 55,
                     backgroundColor: Colors.grey.shade200,
-                    backgroundImage: _profileImage != null
-                        ? FileImage(_profileImage!)
+                    backgroundImage: profileState.uploadedProfilePictureUrl != null
+                        ? NetworkImage(profileState.uploadedProfilePictureUrl!)
                         : null,
-                    child: _profileImage == null
+                    child: profileState.uploadedProfilePictureUrl == null
                         ? const Icon(Icons.person, size: 60, color: Colors.grey)
                         : null,
                   ),
-                  CircleAvatar(
-                    radius: 14,
-                    backgroundColor: AppColors.primary,
-                    child: const Icon(
-                      Icons.edit,
-                      size: 16,
-                      color: Colors.black,
+                  if (profileState.status == ProfileStatus.loading)
+                    const Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: SizedBox(
+                        width: 28,
+                        height: 28,
+                        child: CircularProgressIndicator(strokeWidth: 3),
+                      ),
+                    )
+                  else
+                    CircleAvatar(
+                      radius: 14,
+                      backgroundColor: AppColors.primary,
+                      child: const Icon(
+                        Icons.edit,
+                        size: 16,
+                        color: Colors.black,
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),
@@ -301,7 +330,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               width: double.infinity,
               height: 48,
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: () {
+                  // TODO: Later - call update profile use case here
+                  // Use uploadedProfilePictureUrl from state if changed
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   shape: RoundedRectangleBorder(

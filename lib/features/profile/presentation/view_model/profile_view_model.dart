@@ -1,0 +1,59 @@
+import 'dart:io';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:project_ease/features/profile/domain/usecases/upload_profile_picture_usecase.dart';
+import 'package:project_ease/features/profile/presentation/state/profile_state.dart';
+
+final profileViewModelProvider =
+    NotifierProvider<ProfileViewModel, ProfileState>(ProfileViewModel.new);
+
+class ProfileViewModel extends Notifier<ProfileState> {
+  late final UploadProfilePictureUsecase _uploadProfilePictureUsecase;
+
+  @override
+  ProfileState build() {
+    _uploadProfilePictureUsecase = ref.read(
+      uploadProfilePictureUsecaseProvider,
+    );
+    return const ProfileState();
+  }
+
+  Future<String?> uploadProfilePicture(File imageFile) async {
+    state = state.copyWith(status: ProfileStatus.loading);
+
+    final result = await _uploadProfilePictureUsecase(imageFile);
+
+    return result.fold(
+      (failure) {
+        state = state.copyWith(
+          status: ProfileStatus.error,
+          errorMessage: failure.message,
+        );
+        return null;
+      },
+      (url) {
+        state = state.copyWith(
+          status: ProfileStatus.loading,
+          uploadedProfilePictureUrl: url,
+        );
+        return url;
+      },
+    );
+  }
+
+  void clearError() {
+    state = state.copyWith(resetErrorMessage: true);
+  }
+
+  void clearUploadedPictureUrl() {
+    state = state.copyWith(resetUploadedPictureUrl: true);
+  }
+
+  void resetAfterUpload() {
+    state = state.copyWith(
+      status: ProfileStatus.initial,
+      resetUploadedPictureUrl: true,
+      resetErrorMessage: true,
+    );
+  }
+}
