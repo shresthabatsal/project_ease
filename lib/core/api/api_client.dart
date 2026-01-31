@@ -121,6 +121,21 @@ class ApiClient {
       options: options,
     );
   }
+
+  // Multipart request for file uploads
+  Future<Response> uploadFile(
+    String path, {
+    required FormData formData,
+    Options? options,
+    ProgressCallback? onSendProgress,
+  }) async {
+    return _dio.post(
+      path,
+      data: formData,
+      options: options,
+      onSendProgress: onSendProgress,
+    );
+  }
 }
 
 class AuthInterceptor extends Interceptor {
