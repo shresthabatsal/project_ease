@@ -40,17 +40,32 @@ class ProfileRemoteDataSource implements IProfileRemoteDataSource {
   }
 
   @override
-  Future<AuthApiModel> updateProfile(AuthApiModel profile) async {
-    final token = await _tokenService.getToken();
-    final response = await _apiClient.put(
-      ApiEndpoints.updateProfile,
-      data: profile.toJson(),
-      options: Options(headers: {'Authorization': 'Bearer $token'}),
-    );
+Future<AuthApiModel> updateProfile(AuthApiModel profile) async {
+  final token = await _tokenService.getToken();
 
-    final data = response.data['data'] ?? response.data;
-    return AuthApiModel.fromJson(data);
-  }
+  final formData = FormData.fromMap({
+    'fullName': profile.fullName,
+    'email': profile.email,
+    if (profile.phoneNumber != null && profile.phoneNumber!.isNotEmpty)
+      'phoneNumber': profile.phoneNumber,
+    // 'password': profile.password ?? '',
+    if (profile.profilePicture != null && profile.profilePicture!.isNotEmpty)
+      'profilePictureUrl': profile.profilePicture,
+  });
+
+  final response = await _apiClient.put(
+    ApiEndpoints.updateProfile,
+    data: formData,
+    options: Options(
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    ),
+  );
+
+  final data = response.data['data'] ?? response.data;
+  return AuthApiModel.fromJson(data);
+}
 
   @override
   Future<String> uploadProfilePicture(File image) async {

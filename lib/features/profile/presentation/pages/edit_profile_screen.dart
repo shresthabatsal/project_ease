@@ -6,7 +6,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:project_ease/apps/theme/app_colors.dart';
 import 'package:project_ease/core/api/api_endpoints.dart';
+import 'package:project_ease/core/utils/snackbar_utils.dart';
 import 'package:project_ease/core/widgets/custom_text_form_field.dart';
+import 'package:project_ease/features/auth/domain/entities/auth_entity.dart';
 import 'package:project_ease/features/profile/presentation/state/profile_state.dart';
 import 'package:project_ease/features/profile/presentation/view_model/profile_view_model.dart';
 
@@ -116,9 +118,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       }
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Unable to access gallery")),
-        );
+        SnackbarUtils.showWarning(context, "Unable to access gallery");
       }
     }
   }
@@ -236,9 +236,22 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
     ref.listen<ProfileState>(profileViewModelProvider, (previous, next) {
       if (next.status == ProfileStatus.error && next.errorMessage != null) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(next.errorMessage!)));
+        SnackbarUtils.showError(context, next.errorMessage!);
+      }
+
+      // Prefill fields when profile is loaded
+      if (next.status == ProfileStatus.loaded && next.profile != null) {
+        final profile = next.profile!;
+
+        if (_fullNameController.text.isEmpty) {
+          _fullNameController.text = profile.fullName;
+        }
+        if (_emailController.text.isEmpty) {
+          _emailController.text = profile.email;
+        }
+        if (_phoneController.text.isEmpty && profile.phoneNumber != null) {
+          _phoneController.text = profile.phoneNumber!;
+        }
       }
     });
 
@@ -269,7 +282,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             GestureDetector(
               onTap: isLoading
                   ? null
-                  : _showProfileOptions, // disable tap while loading
+                  : _showProfileOptions,
               child: Stack(
                 alignment: Alignment.center,
                 children: [
@@ -284,7 +297,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         : null,
                   ),
 
-                  // Show centered spinner when loading
                   if (isLoading)
                     const SizedBox(
                       width: 60,
@@ -335,15 +347,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
             const SizedBox(height: 16),
 
-            // Password
-            CustomTextFormField(
-              controller: _passwordController,
-              hintText: "Password",
-              isPassword: true,
-            ),
-
-            const SizedBox(height: 16),
-
             // Phone Number
             CustomTextFormField(
               controller: _phoneController,
@@ -358,19 +361,59 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               width: double.infinity,
               height: 48,
               child: ElevatedButton(
-                onPressed: () {
-                  // TODO: Later - call update profile use case here
-                },
+                onPressed: profileState.status == ProfileStatus.loading
+                    ? null
+                    : () async {
+                        final currentProfile = profileState.profile;
+                        if (currentProfile == null) {
+                          SnackbarUtils.showWarning(
+                              context, "No profile data available");
+                          return;
+                        }
+
+                        final updatedProfile = AuthEntity(
+                          authId: currentProfile.authId,
+                          fullName: _fullNameController.text.trim(),
+                          email: _emailController.text.trim(),
+                          phoneNumber: _phoneController.text.trim().isEmpty
+                              ? null
+                              : _phoneController.text.trim(),
+                          profilePicture: profileState.uploadedProfilePictureUrl ??
+                              currentProfile.profilePicture,
+                        );
+
+                        await ref
+                            .read(profileViewModelProvider.notifier)
+                            .updateProfile(updatedProfile);
+
+                        if (profileState.status == ProfileStatus.updated) {
+                          SnackbarUtils.showSuccess(
+                              context, "Profile updated successfully");
+                        } else if (profileState.status == ProfileStatus.error &&
+                            profileState.errorMessage != null) {
+                          SnackbarUtils.showError(
+                              context, profileState.errorMessage!);
+                        }
+                      },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                child: const Text(
-                  "SAVE CHANGES",
-                  style: TextStyle(color: Colors.black),
-                ),
+                child: profileState.status == ProfileStatus.loading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          color: Colors.black,
+                        ),
+                      )
+                    : const Text(
+                        "SAVE CHANGES",
+                        style: TextStyle(color: Colors.black),
+                      ),
               ),
             ),
           ],

@@ -35,5 +35,5 @@ class ApiEndpoints {
   static const String updateProfile = "/auth/update-profile";
   static const String uploadProfilePicture = "/auth/upload-profile-picture";
   static const String deleteAccount = "/auth/delete-account";
-  static String profilePicture(String filename) => "$mediaServerUrl$filename";
+  static String profilePicture(String filename) => filename;
 }
