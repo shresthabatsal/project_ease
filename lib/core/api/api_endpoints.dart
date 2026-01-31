@@ -29,4 +29,10 @@ class ApiEndpoints {
   // ========== Auth Endpoints ==========
   static const String register = "/auth/register";
   static const String login = "/auth/login";
+
+  // ========== User Profile Endpoints ==========
+  static const String getProfile = "/auth/profile";
+  static const String updateProfile = "/auth/update-profile";
+  static const String uploadProfilePicture = "/auth/upload-profile-picture";
+  static const String deleteAccount = "/auth/delete-account";
 }
