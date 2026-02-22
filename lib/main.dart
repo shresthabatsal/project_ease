@@ -1,3 +1,4 @@
+import 'package:device_preview/device_preview.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:project_ease/apps/app.dart';
@@ -15,7 +16,12 @@ void main() async {
   runApp(
     ProviderScope(
       overrides: [sharedPreferencesProvider.overrideWithValue(sharedPrefs)],
-      child: App(),
+      child: DevicePreview(
+        enabled: false,
+        builder: (context) {
+          return App();
+        }
+      ),
     ),
   );
 }
