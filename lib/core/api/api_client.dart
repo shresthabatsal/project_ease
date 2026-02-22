@@ -2,19 +2,21 @@ import 'package:dio/dio.dart';
 import 'package:dio_smart_retry/dio_smart_retry.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
+import 'package:project_ease/core/services/storage/token_service.dart';
 
 import 'api_endpoints.dart';
 
 final apiClientProvider = Provider<ApiClient>((ref) {
-  return ApiClient();
+  final tokenService = ref.read(tokenServiceProvider);
+  return ApiClient(tokenService);
 });
 
 class ApiClient {
+  final TokenService _tokenService;
   late final Dio _dio;
 
-  ApiClient() {
+  ApiClient(this._tokenService) {
     _dio = Dio(
       BaseOptions(
         baseUrl: ApiEndpoints.baseUrl,
@@ -28,7 +30,7 @@ class ApiClient {
     );
 
     // Auth interceptor (JWT)
-    _dio.interceptors.add(AuthInterceptor());
+    _dio.interceptors.add(AuthInterceptor(_tokenService));
 
     // Retry on network errors
     _dio.interceptors.add(
@@ -139,8 +141,9 @@ class ApiClient {
 }
 
 class AuthInterceptor extends Interceptor {
-  final FlutterSecureStorage _storage = const FlutterSecureStorage();
-  static const String _tokenKey = 'auth_token';
+  final TokenService _tokenService;
+
+  AuthInterceptor(this._tokenService);
 
   @override
   void onRequest(
@@ -152,9 +155,10 @@ class AuthInterceptor extends Interceptor {
         options.path == ApiEndpoints.register;
 
     if (!isAuthEndpoint) {
-      final token = await _storage.read(key: _tokenKey);
-      if (token != null) {
-        options.headers['Authorization'] = 'Bearer $token';
+      final token = await _tokenService.getToken();
+      if (token != null && token.isNotEmpty) {
+        final cleanToken = token.replaceFirst('Bearer ', '');
+        options.headers['Authorization'] = 'Bearer $cleanToken';
       }
     }
 
@@ -164,8 +168,7 @@ class AuthInterceptor extends Interceptor {
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
     if (err.response?.statusCode == 401) {
-      await _storage.delete(key: _tokenKey);
-      // Logout
+      await _tokenService.removeToken();
     }
     handler.next(err);
   }

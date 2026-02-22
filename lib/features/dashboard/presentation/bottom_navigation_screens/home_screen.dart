@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:project_ease/apps/theme/app_colors.dart';
 import 'package:project_ease/core/utils/app_fonts.dart';
 import 'package:project_ease/core/widgets/home_action_card.dart';
 import 'package:project_ease/core/widgets/product_card.dart';
+import 'package:project_ease/features/store/presentation/widgets/store_dropdown.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
@@ -35,36 +37,35 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 8),
           child: Row(
             children: [
-              Image.asset('assets/images/ease_logo.png', height: isTablet ? 20 : 10),
-              const SizedBox(width: 16),
-
-              // Texts
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'You are browsing at',
-                    style: TextStyle(
-                      fontSize: isTablet ? AppFonts.labelLarge : AppFonts.labelMedium,
-                      color: Colors.grey,
+              Image.asset(
+                'assets/images/ease_logo.png',
+                height: isTablet ? 20 : 10,
+              ),
+              const SizedBox(width: 12),
+              // Texts and Store Dropdown
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'You are browsing at',
+                      style: TextStyle(
+                        fontSize: isTablet
+                            ? AppFonts.labelLarge
+                            : AppFonts.labelMedium,
+                        color: Colors.grey,
+                      ),
                     ),
-                  ),
-                  Text(
-                    'Ease',
-                    style: TextStyle(
-                      fontSize: isTablet ? AppFonts.bodyLarge + 4 : AppFonts.bodyLarge,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black,
-                    ),
-                  ),
-                ],
+                    const SizedBox(height: 2),
+                    // Store Dropdown
+                    StoreDropdown(isTablet: isTablet),
+                  ],
+                ),
               ),
             ],
           ),
         ),
-
-        // Notification Icon
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 8),
@@ -84,7 +85,6 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 12),
             _buildDotsIndicator(isTablet),
             const SizedBox(height: 12),
-
             // Grid
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -93,18 +93,45 @@ class _HomeScreenState extends State<HomeScreen> {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 children: [
-                  HomeActionCard(icon: Icons.shopping_basket_sharp, label: 'Grocery', onTap: () {}),
-                  HomeActionCard(icon: Icons.checkroom, label: 'Clothing', onTap: () {}),
-                  HomeActionCard(icon: Icons.cleaning_services, label: 'Household', onTap: () {}),
-                  HomeActionCard(icon: Icons.devices, label: 'Electronics', onTap: () {}),
+                  HomeActionCard(
+                    icon: Icons.shopping_basket_sharp,
+                    label: 'Grocery',
+                    onTap: () {},
+                  ),
+                  HomeActionCard(
+                    icon: Icons.checkroom,
+                    label: 'Clothing',
+                    onTap: () {},
+                  ),
+                  HomeActionCard(
+                    icon: Icons.cleaning_services,
+                    label: 'Household',
+                    onTap: () {},
+                  ),
+                  HomeActionCard(
+                    icon: Icons.devices,
+                    label: 'Electronics',
+                    onTap: () {},
+                  ),
                   HomeActionCard(icon: Icons.spa, label: 'Care', onTap: () {}),
-                  HomeActionCard(icon: Icons.health_and_safety, label: 'Health', onTap: () {}),
-                  HomeActionCard(icon: Icons.edit, label: 'Stationery', onTap: () {}),
-                  HomeActionCard(icon: Icons.child_friendly, label: 'Baby', onTap: () {}),
+                  HomeActionCard(
+                    icon: Icons.health_and_safety,
+                    label: 'Health',
+                    onTap: () {},
+                  ),
+                  HomeActionCard(
+                    icon: Icons.edit,
+                    label: 'Stationery',
+                    onTap: () {},
+                  ),
+                  HomeActionCard(
+                    icon: Icons.child_friendly,
+                    label: 'Baby',
+                    onTap: () {},
+                  ),
                 ],
               ),
             ),
-
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
               child: Align(
@@ -171,35 +198,36 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildAdSlider(bool isTablet) {
     final List<String> images = isTablet
-      ? [
-          'assets/images/tab_ad.png',
-          'assets/images/tab_ad.png',
-          'assets/images/tab_ad.png',
-        ]
-      : adImages;
-  return SizedBox(
-    height: isTablet ? 240 : 160,
-    width: double.infinity,
-    child: PageView.builder(
-      controller: _pageController,
-      itemCount: images.length,
-      onPageChanged: (index) => setState(() => _currentPage = index),
-      itemBuilder: (context, index) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Image.asset(
-              images[index],
-              fit: BoxFit.cover,
-              width: double.infinity,
+        ? [
+            'assets/images/tab_ad.png',
+            'assets/images/tab_ad.png',
+            'assets/images/tab_ad.png',
+          ]
+        : adImages;
+
+    return SizedBox(
+      height: isTablet ? 240 : 160,
+      width: double.infinity,
+      child: PageView.builder(
+        controller: _pageController,
+        itemCount: images.length,
+        onPageChanged: (index) => setState(() => _currentPage = index),
+        itemBuilder: (context, index) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.asset(
+                images[index],
+                fit: BoxFit.cover,
+                width: double.infinity,
+              ),
             ),
-          ),
-        );
-      },
-    ),
-  );
-}
+          );
+        },
+      ),
+    );
+  }
 
   Widget _buildDotsIndicator(bool isTablet) {
     return Row(
@@ -208,8 +236,12 @@ class _HomeScreenState extends State<HomeScreen> {
         adImages.length,
         (index) => Container(
           margin: const EdgeInsets.symmetric(horizontal: 4),
-          width: _currentPage == index ? (isTablet ? 12 : 8) : (isTablet ? 8 : 6),
-          height: _currentPage == index ? (isTablet ? 12 : 8) : (isTablet ? 8 : 6),
+          width: _currentPage == index
+              ? (isTablet ? 12 : 8)
+              : (isTablet ? 8 : 6),
+          height: _currentPage == index
+              ? (isTablet ? 12 : 8)
+              : (isTablet ? 8 : 6),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: _currentPage == index ? AppColors.primary : Colors.grey,
