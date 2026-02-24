@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:project_ease/apps/theme/app_colors.dart';
 import 'package:project_ease/core/api/api_endpoints.dart';
+import 'package:project_ease/features/dashboard/presentation/product_detail_screen.dart';
 import 'package:project_ease/features/product/domain/entities/product_entity.dart';
 
 class ProductListCard extends StatelessWidget {
   final ProductEntity product;
-  final VoidCallback? onTap;
   final bool isTablet;
 
   const ProductListCard({
     super.key,
     required this.product,
-    this.onTap,
     this.isTablet = false,
   });
 
@@ -20,7 +19,12 @@ class ProductListCard extends StatelessWidget {
     final imageSize = isTablet ? 110.0 : 90.0;
 
     return GestureDetector(
-      onTap: onTap,
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ProductDetailScreen(product: product),
+        ),
+      ),
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
         padding: const EdgeInsets.all(10),
@@ -38,7 +42,7 @@ class ProductListCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Product Image
+            // Image
             ClipRRect(
               borderRadius: BorderRadius.circular(10),
               child: SizedBox(
@@ -55,7 +59,7 @@ class ProductListCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-            // Product Details
+            // Details
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -118,16 +122,26 @@ class ProductListCard extends StatelessWidget {
                   if (product.stock != null && product.stock! <= 5) ...[
                     const SizedBox(height: 4),
                     Text(
-                      'Only ${product.stock} left!',
+                      product.stock! <= 0
+                          ? 'Out of stock'
+                          : 'Only ${product.stock} left!',
                       style: TextStyle(
                         fontSize: isTablet ? 12 : 10,
-                        color: Colors.red.shade400,
+                        color: product.stock! <= 0
+                            ? Colors.red.shade600
+                            : Colors.red.shade400,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
                 ],
               ),
+            ),
+            // Chevron
+            Icon(
+              Icons.chevron_right_rounded,
+              color: Colors.grey.shade300,
+              size: 20,
             ),
           ],
         ),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:project_ease/apps/theme/app_colors.dart';
 import 'package:project_ease/core/api/api_endpoints.dart';
 import 'package:project_ease/core/utils/app_fonts.dart';
+import 'package:project_ease/features/dashboard/presentation/product_detail_screen.dart';
 import 'package:project_ease/features/product/domain/entities/category_entity.dart';
 import 'package:project_ease/features/product/domain/entities/product_entity.dart';
 import 'package:project_ease/features/product/presentation/state/product_state.dart';
@@ -126,7 +127,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  // Categories
+  // ── Categories ──────────────────────────────────────────────────────────────
 
   Widget _buildCategories(
     BuildContext context,
@@ -390,7 +391,12 @@ class _HomeProductCard extends StatelessWidget {
     final imageHeight = isTablet ? 200.0 : 160.0;
 
     return GestureDetector(
-      onTap: () {},
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ProductDetailScreen(product: product),
+        ),
+      ),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
