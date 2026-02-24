@@ -7,11 +7,11 @@ import 'package:project_ease/features/product/domain/entities/product_entity.dar
 import 'package:project_ease/features/product/domain/repositories/product_repository.dart';
 
 final getProductsByStoreCategoryUsecaseProvider =
-    Provider<GetProductsByStoreCategoryUsecase>((ref) {
-      return GetProductsByStoreCategoryUsecase(
+    Provider<GetProductsByStoreCategoryUsecase>(
+      (ref) => GetProductsByStoreCategoryUsecase(
         repository: ref.read(productRepositoryProvider),
-      );
-    });
+      ),
+    );
 
 class GetProductsByStoreCategoryUsecaseParams extends Equatable {
   final String storeId;
@@ -31,10 +31,5 @@ class GetProductsByStoreCategoryUsecase {
 
   Future<Either<Failure, List<ProductEntity>>> call(
     GetProductsByStoreCategoryUsecaseParams params,
-  ) {
-    return _repo.getProductsByStoreAndCategory(
-      params.storeId,
-      params.categoryId,
-    );
-  }
+  ) => _repo.getProductsByStoreAndCategory(params.storeId, params.categoryId);
 }
