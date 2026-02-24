@@ -13,20 +13,10 @@ class BottomNavigationScreen extends StatefulWidget {
 }
 
 class _BottomNavigationScreenState extends State<BottomNavigationScreen> {
-
   int _selectedIndex = 0;
 
-  late final List<Widget> lstBottomScreen;
-
-  @override
-  void initState() {
-    super.initState();
-    lstBottomScreen = const [
-      HomeScreen(),
-      SearchScreen(),
-      CartScreen(),
-      AccountScreen(),
-    ];
+  void _switchToSearch() {
+    setState(() => _selectedIndex = 1);
   }
 
   @override
@@ -34,22 +24,28 @@ class _BottomNavigationScreenState extends State<BottomNavigationScreen> {
     AppFonts.init(context);
     final bool isTablet = MediaQuery.of(context).size.width >= 600;
 
+    final screens = [
+      HomeScreen(onNavigateToSearch: _switchToSearch),
+      const SearchScreen(),
+      const CartScreen(),
+      const AccountScreen(),
+    ];
+
     return Scaffold(
-      body: lstBottomScreen[_selectedIndex],
+      body: IndexedStack(index: _selectedIndex, children: screens),
       bottomNavigationBar: BottomNavigationBar(
         iconSize: isTablet ? 42 : 30,
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-          BottomNavigationBarItem(icon: Icon(Icons.search), label: "Search"),
-          BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: "Cart"),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.shopping_cart),
+            label: 'Cart',
+          ),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
         currentIndex: _selectedIndex,
-        onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
+        onTap: (index) => setState(() => _selectedIndex = index),
       ),
     );
   }
