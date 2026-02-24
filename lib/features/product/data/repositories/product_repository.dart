@@ -5,16 +5,15 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:project_ease/core/error/failures.dart';
 import 'package:project_ease/features/product/data/datasources/product_datasource.dart';
-import 'package:project_ease/features/product/data/datasources/remote/product_remote_datasource.dart';
 import 'package:project_ease/features/product/domain/entities/category_entity.dart';
 import 'package:project_ease/features/product/domain/entities/product_entity.dart';
 import 'package:project_ease/features/product/domain/repositories/product_repository.dart';
 
-final productRepositoryProvider = Provider<IProductRepository>((ref) {
-  return ProductRepository(
+final productRepositoryProvider = Provider<IProductRepository>(
+  (ref) => ProductRepository(
     remoteDatasource: ref.read(productRemoteDatasourceProvider),
-  );
-});
+  ),
+);
 
 class ProductRepository implements IProductRepository {
   final IProductRemoteDatasource _remote;
@@ -94,18 +93,29 @@ class ProductRepository implements IProductRepository {
   }
 
   @override
-  Future<Either<Failure, List<ProductEntity>>> getAllProducts({
+  Future<Either<Failure, PaginatedProducts>> getAllProducts({
     String? search,
     int page = 1,
-    int size = 20,
+    int size = 10,
+    String sortBy = 'createdAt',
+    String sortOrder = 'desc',
   }) async {
     try {
-      final models = await _remote.getAllProducts(
+      final result = await _remote.getAllProducts(
         search: search,
         page: page,
         size: size,
+        sortBy: sortBy,
+        sortOrder: sortOrder,
       );
-      return Right(models.map((m) => m.toEntity()).toList());
+      return Right(
+        PaginatedProducts(
+          products: result.products.map((m) => m.toEntity()).toList(),
+          page: result.page,
+          totalPages: result.totalPages,
+          total: result.total,
+        ),
+      );
     } catch (e) {
       return _handleError(e, 'Failed to load products.');
     }
