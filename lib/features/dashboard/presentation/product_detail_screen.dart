@@ -1,19 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:project_ease/apps/theme/app_colors.dart';
 import 'package:project_ease/core/api/api_endpoints.dart';
+import 'package:project_ease/features/cart/domain/entities/cart_entity.dart';
+import 'package:project_ease/features/cart/presentation/state/cart_state.dart';
+import 'package:project_ease/features/dashboard/presentation/checkout_screen.dart';
 import 'package:project_ease/features/product/domain/entities/product_entity.dart';
+import 'package:project_ease/core/utils/snackbar_utils.dart';
+import 'package:project_ease/features/store/presentation/view_model/store_view_model.dart';
 
-class ProductDetailScreen extends StatefulWidget {
+class ProductDetailScreen extends ConsumerStatefulWidget {
   final ProductEntity product;
 
   const ProductDetailScreen({super.key, required this.product});
 
   @override
-  State<ProductDetailScreen> createState() => _ProductDetailScreenState();
+  ConsumerState<ProductDetailScreen> createState() =>
+      _ProductDetailScreenState();
 }
 
-class _ProductDetailScreenState extends State<ProductDetailScreen> {
+class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
   int _quantity = 1;
 
   int get _maxQty => widget.product.stock ?? 99;
@@ -99,13 +106,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     isTablet ? 32 : 20,
                     20,
                     isTablet ? 32 : 20,
-                    // Bottom padding = bottom bar height + safe area
                     120 + MediaQuery.of(context).padding.bottom,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Category + subcategory badges
                       if (widget.product.categoryName != null ||
                           widget.product.subcategoryName != null)
                         Wrap(
@@ -271,21 +276,52 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             child: _BottomActionBar(
               isOutOfStock: _isOutOfStock,
               isTablet: isTablet,
-              onAddToCart: () {
-                // TODO: wire to cart state
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      '${widget.product.name} ×$_quantity added to cart',
-                    ),
-                    behavior: SnackBarBehavior.floating,
-                    backgroundColor: Colors.black87,
-                    duration: const Duration(seconds: 2),
-                  ),
-                );
+              onAddToCart: () async {
+                final added = await ref
+                    .read(cartViewModelProvider.notifier)
+                    .addItem(widget.product, _quantity);
+                if (!mounted) return;
+                if (added) {
+                  SnackbarUtils.showSuccess(
+                    context,
+                    '${widget.product.name} ×$_quantity added to cart',
+                  );
+                } else {
+                  SnackbarUtils.showError(
+                    context,
+                    'Failed to add to cart. Please try again.',
+                  );
+                }
               },
               onBuyNow: () {
-                // TODO: wire to checkout
+                final storeState = ref.read(storeViewModelProvider);
+                if (storeState.selectedStore == null) {
+                  SnackbarUtils.showWarning(
+                    context,
+                    'Please select a store first.',
+                  );
+                  return;
+                }
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => CheckoutScreen(
+                      storeId: storeState.selectedStore!.storeId,
+                      storeName: storeState.selectedStore!.name,
+                      items: [
+                        CartItemEntity(
+                          cartItemId: 'buy_now',
+                          product: widget.product,
+                          quantity: _quantity,
+                        ),
+                      ],
+                      total: widget.product.price * _quantity,
+                      isBuyNow: true,
+                      buyNowProduct: widget.product,
+                      buyNowQuantity: _quantity,
+                    ),
+                  ),
+                );
               },
             ),
           ),
