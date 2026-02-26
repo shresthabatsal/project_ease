@@ -59,6 +59,24 @@ class ApiEndpoints {
     String subcategoryId,
   ) => '/products/store/$storeId/subcategory/$subcategoryId';
 
+  // ========== Cart Endpoints ==========
+  static const String getCart = '/user/cart';
+  static const String addToCart = '/user/cart';
+  static const String clearCart = '/user/cart';
+  static String updateCartItem(String id) => '/user/cart/$id';
+  static String removeCartItem(String id) => '/user/cart/$id';
+
+  // ========== Order Endpoints ==========
+  static const String createOrder = '/user/orders';
+  static const String buyNow = '/user/orders/buy-now';
+  static const String getUserOrders = '/user/orders';
+  static String getOrderById(String id) => '/user/orders/$id';
+  static String cancelOrder(String id) => '/user/orders/$id/cancel';
+
+  // ========== Payment Endpoints ==========
+  static const String submitReceipt = '/user/payments/submit-receipt';
+  static String getOrderPayment(String orderId) => '/user/payments/order/$orderId';
+
   // ========== Admin Endpoints ==========
   static const String adminStores = '/admin/stores';
   static String adminStoreById(String id) => '/admin/stores/$id';
