@@ -5,6 +5,7 @@ import 'package:project_ease/core/utils/snackbar_utils.dart';
 import 'package:project_ease/features/cart/domain/entities/cart_entity.dart';
 import 'package:project_ease/features/dashboard/presentation/receipt_upload_screen.dart';
 import 'package:project_ease/features/order/presentation/state/order_state.dart';
+import 'package:project_ease/features/order/presentation/view_model/order_view_model.dart';
 import 'package:project_ease/features/product/domain/entities/product_entity.dart';
 
 class CheckoutScreen extends ConsumerStatefulWidget {

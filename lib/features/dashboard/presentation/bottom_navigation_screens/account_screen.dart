@@ -7,6 +7,7 @@ import 'package:project_ease/core/api/api_endpoints.dart';
 import 'package:project_ease/core/utils/snackbar_utils.dart';
 import 'package:project_ease/features/auth/data/datasources/local/auth_local_datasource.dart';
 import 'package:project_ease/features/auth/domain/entities/auth_entity.dart';
+import 'package:project_ease/features/dashboard/presentation/bottom_navigation_screens/my_orders_screen.dart';
 import 'package:project_ease/features/profile/presentation/state/profile_state.dart';
 import 'package:project_ease/features/profile/presentation/view_model/profile_view_model.dart';
 
@@ -31,14 +32,6 @@ class ProfileScreen extends ConsumerWidget {
             color: Colors.black87,
           ),
         ),
-        actions: [
-          if (state.user != null)
-            IconButton(
-              icon: const Icon(Icons.logout_rounded, color: Colors.red),
-              tooltip: 'Logout',
-              onPressed: () => _confirmLogout(context, ref),
-            ),
-        ],
       ),
       body: switch (state.status) {
         ProfileStatus.initial || ProfileStatus.loading => const Center(
@@ -52,57 +45,6 @@ class ProfileScreen extends ConsumerWidget {
         _ => _ProfileBody(user: state.user!, isTablet: isTablet),
       },
     );
-  }
-
-  Future<void> _confirmLogout(BuildContext context, WidgetRef ref) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(
-          'Log out?',
-          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 17),
-        ),
-        content: const Text(
-          'Are you sure you want to log out of your account?',
-          style: TextStyle(fontSize: 14, color: Colors.black54),
-        ),
-        actionsPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(color: Colors.black54),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            child: const Text(
-              'Log out',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true && context.mounted) {
-      await ref.read(authLocalDatasourceProvider).logoutUser();
-      if (context.mounted) {
-        Navigator.of(
-          context,
-        ).pushNamedAndRemoveUntil('/login', (route) => false);
-      }
-    }
   }
 }
 
@@ -188,7 +130,7 @@ class _ProfileBody extends ConsumerWidget {
                   icon: Icons.person_outline_rounded,
                   initialValue: user.fullName,
                   keyboardType: TextInputType.name,
-                  onSave: (val) async => ref
+                  onSave: (val) => ref
                       .read(profileViewModelProvider.notifier)
                       .updateProfile(fullName: val),
                 ),
@@ -217,7 +159,7 @@ class _ProfileBody extends ConsumerWidget {
                   icon: Icons.phone_outlined,
                   initialValue: user.phoneNumber ?? '',
                   keyboardType: TextInputType.phone,
-                  onSave: (val) async => ref
+                  onSave: (val) => ref
                       .read(profileViewModelProvider.notifier)
                       .updateProfile(phoneNumber: val),
                 ),
@@ -231,12 +173,50 @@ class _ProfileBody extends ConsumerWidget {
               ),
             ],
           ),
+
+          const SizedBox(height: 12),
+
+          // My Orders
+          _ActionRow(
+            icon: Icons.receipt_long_outlined,
+            label: 'My Orders',
+            isTablet: isTablet,
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const MyOrdersScreen()),
+            ),
+          ),
+
+          const SizedBox(height: 28),
+
+          // Logout button
+          SizedBox(
+            width: double.infinity,
+            height: isTablet ? 52 : 48,
+            child: ElevatedButton.icon(
+              onPressed: () => _showLogoutDialog(context, ref),
+              icon: const Icon(Icons.logout_rounded, size: 18),
+              label: const Text('Log Out'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red.shade50,
+                foregroundColor: Colors.red.shade600,
+                elevation: 0,
+                side: BorderSide(color: Colors.red.shade200),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 24),
         ],
       ),
     );
   }
 
-  // Avatar sheet
+  // Sheet launchers
+
   void _showAvatarSheet(BuildContext context, String? currentUrl) {
     showModalBottomSheet(
       context: context,
@@ -244,12 +224,11 @@ class _ProfileBody extends ConsumerWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (ctx) =>
+      builder: (_) =>
           _AvatarOptionsSheet(currentUrl: currentUrl, isTablet: isTablet),
     );
   }
 
-  // Single field sheet
   void _showSingleFieldSheet(
     BuildContext context, {
     required String title,
@@ -275,7 +254,6 @@ class _ProfileBody extends ConsumerWidget {
     );
   }
 
-  // Email sheet
   void _showEmailSheet(BuildContext context, String currentEmail) {
     showModalBottomSheet(
       context: context,
@@ -286,7 +264,6 @@ class _ProfileBody extends ConsumerWidget {
     );
   }
 
-  // Password sheet
   void _showPasswordSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -295,9 +272,124 @@ class _ProfileBody extends ConsumerWidget {
       builder: (_) => _PasswordSheet(isTablet: isTablet),
     );
   }
+
+  Future<void> _showLogoutDialog(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Log out?',
+          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 17),
+        ),
+        content: const Text(
+          'Are you sure you want to log out of your account?',
+          style: TextStyle(fontSize: 14, color: Colors.black54),
+        ),
+        actionsPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: Colors.black54),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            child: const Text(
+              'Log out',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      await ref.read(authLocalDatasourceProvider).logoutUser();
+      if (context.mounted) {
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil('/login', (route) => false);
+      }
+    }
+  }
 }
 
-// Info Card
+// My Orders
+class _ActionRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isTablet;
+  final VoidCallback onTap;
+
+  const _ActionRow({
+    required this.icon,
+    required this.label,
+    required this.isTablet,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.08),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 17, color: AppColors.primary),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: isTablet ? 15 : 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              size: 20,
+              color: Colors.grey.shade300,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class _InfoCard extends StatelessWidget {
   final List<_EditableRow> rows;
@@ -449,7 +541,9 @@ class _Avatar extends StatelessWidget {
       Icon(Icons.person_rounded, size: size * 0.5, color: Colors.grey.shade300);
 }
 
-// Sheet base
+// ─────────────────────────────────────────────────────────────────────────────
+// _SheetWrapper  (bottom sheet scaffold)
+// ─────────────────────────────────────────────────────────────────────────────
 
 class _SheetWrapper extends StatelessWidget {
   final String title;
@@ -512,63 +606,54 @@ class _SheetWrapper extends StatelessWidget {
   }
 }
 
-// ─── Avatar options sheet ─────────────────────────────────────────────────────
+// Avatar options sheet
 
-class _AvatarOptionsSheet extends ConsumerStatefulWidget {
+class _AvatarOptionsSheet extends ConsumerWidget {
   final String? currentUrl;
   final bool isTablet;
 
   const _AvatarOptionsSheet({required this.currentUrl, required this.isTablet});
 
   @override
-  ConsumerState<_AvatarOptionsSheet> createState() =>
-      _AvatarOptionsSheetState();
-}
-
-class _AvatarOptionsSheetState extends ConsumerState<_AvatarOptionsSheet> {
-  bool _loading = false;
-
-  Future<void> _pick(ImageSource source) async {
-    Navigator.pop(context);
-    final file = await ImagePicker().pickImage(
-      source: source,
-      imageQuality: 85,
-    );
-    if (file == null || !mounted) return;
-    setState(() => _loading = true);
-    final success = await ref
-        .read(profileViewModelProvider.notifier)
-        .updateProfile(profilePicturePath: file.path);
-    if (!mounted) return;
-    setState(() => _loading = false);
-    if (success) {
-      SnackbarUtils.showSuccess(context, 'Profile picture updated.');
-    } else {
-      SnackbarUtils.showError(
-        context,
-        ref.read(profileViewModelProvider).errorMessage ?? 'Failed.',
+  Widget build(BuildContext context, WidgetRef ref) {
+    Future<void> pick(ImageSource source) async {
+      Navigator.pop(context);
+      final file = await ImagePicker().pickImage(
+        source: source,
+        imageQuality: 85,
       );
+      if (file == null || !context.mounted) return;
+      final success = await ref
+          .read(profileViewModelProvider.notifier)
+          .updateProfile(profilePicturePath: file.path);
+      if (!context.mounted) return;
+      if (success) {
+        SnackbarUtils.showSuccess(context, 'Profile picture updated.');
+      } else {
+        SnackbarUtils.showError(
+          context,
+          ref.read(profileViewModelProvider).errorMessage ??
+              'Failed to update picture.',
+        );
+      }
     }
-  }
 
-  Future<void> _remove() async {
-    Navigator.pop(context);
-    final success = await ref
-        .read(profileViewModelProvider.notifier)
-        .updateProfile(removeProfilePicture: true);
-    if (!mounted) return;
-    if (success) {
-      SnackbarUtils.showSuccess(context, 'Profile picture removed.');
-    } else {
-      SnackbarUtils.showError(
-        context,
-        ref.read(profileViewModelProvider).errorMessage ?? 'Failed.',
-      );
+    Future<void> remove() async {
+      Navigator.pop(context);
+      final success = await ref
+          .read(profileViewModelProvider.notifier)
+          .updateProfile(removeProfilePicture: true);
+      if (!context.mounted) return;
+      if (success) {
+        SnackbarUtils.showSuccess(context, 'Profile picture removed.');
+      } else {
+        SnackbarUtils.showError(
+          context,
+          ref.read(profileViewModelProvider).errorMessage ?? 'Failed.',
+        );
+      }
     }
-  }
 
-  @override
-  Widget build(BuildContext context) {
     return SafeArea(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -586,35 +671,36 @@ class _AvatarOptionsSheetState extends ConsumerState<_AvatarOptionsSheet> {
           ),
           const SizedBox(height: 16),
           Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: widget.isTablet ? 32 : 20,
-            ),
-            child: Text(
-              'Profile Picture',
-              style: TextStyle(
-                fontSize: widget.isTablet ? 18 : 16,
-                fontWeight: FontWeight.w700,
+            padding: EdgeInsets.symmetric(horizontal: isTablet ? 32 : 20),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Profile Picture',
+                style: TextStyle(
+                  fontSize: isTablet ? 18 : 16,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
           _OptionTile(
             icon: Icons.camera_alt_outlined,
             label: 'Take a photo',
-            onTap: () => _pick(ImageSource.camera),
+            onTap: () => pick(ImageSource.camera),
           ),
           _OptionTile(
             icon: Icons.photo_library_outlined,
             label: 'Choose from gallery',
-            onTap: () => _pick(ImageSource.gallery),
+            onTap: () => pick(ImageSource.gallery),
           ),
-          if (widget.currentUrl != null)
+          if (currentUrl != null)
             _OptionTile(
               icon: Icons.delete_outline_rounded,
               label: 'Remove photo',
               iconColor: Colors.red.shade400,
               labelColor: Colors.red.shade400,
-              onTap: _remove,
+              onTap: remove,
             ),
           const SizedBox(height: 8),
         ],
@@ -712,7 +798,6 @@ class _SingleFieldSheetState extends ConsumerState<_SingleFieldSheet> {
       Navigator.pop(context);
       return;
     }
-
     final success = await widget.onSave(val);
     if (!mounted) return;
     if (success) {
@@ -768,22 +853,22 @@ class _EmailSheet extends ConsumerStatefulWidget {
 }
 
 class _EmailSheetState extends ConsumerState<_EmailSheet> {
-  final _emailCtrl = TextEditingController();
+  late final TextEditingController _ctrl;
 
   @override
   void initState() {
     super.initState();
-    _emailCtrl.text = widget.currentEmail;
+    _ctrl = TextEditingController(text: widget.currentEmail);
   }
 
   @override
   void dispose() {
-    _emailCtrl.dispose();
+    _ctrl.dispose();
     super.dispose();
   }
 
   Future<void> _save() async {
-    final email = _emailCtrl.text.trim();
+    final email = _ctrl.text.trim();
     if (email.isEmpty) {
       SnackbarUtils.showError(context, 'Email cannot be empty.');
       return;
@@ -796,7 +881,6 @@ class _EmailSheetState extends ConsumerState<_EmailSheet> {
       Navigator.pop(context);
       return;
     }
-
     final success = await ref
         .read(profileViewModelProvider.notifier)
         .updateProfile(email: email);
@@ -820,7 +904,7 @@ class _EmailSheetState extends ConsumerState<_EmailSheet> {
       isTablet: widget.isTablet,
       children: [
         _FieldInput(
-          controller: _emailCtrl,
+          controller: _ctrl,
           label: 'Email Address',
           icon: Icons.email_outlined,
           keyboardType: TextInputType.emailAddress,
@@ -842,6 +926,7 @@ class _EmailSheetState extends ConsumerState<_EmailSheet> {
 
 class _PasswordSheet extends ConsumerStatefulWidget {
   final bool isTablet;
+
   const _PasswordSheet({required this.isTablet});
 
   @override

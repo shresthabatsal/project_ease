@@ -1,7 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:project_ease/features/order/domain/entities/order_entity.dart';
-import 'package:project_ease/features/order/presentation/view_model/order_view_model.dart';
 
 enum OrderStatus { initial, loading, success, error }
 
@@ -38,8 +36,3 @@ class OrderState extends Equatable {
   @override
   List<Object?> get props => [status, currentOrder, orders, errorMessage];
 }
-
-// Provider
-final orderViewModelProvider = NotifierProvider<OrderViewModel, OrderState>(
-  () => OrderViewModel(),
-);
