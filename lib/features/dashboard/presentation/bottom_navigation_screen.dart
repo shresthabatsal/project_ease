@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:project_ease/apps/theme/app_colors.dart';
+import 'package:project_ease/core/utils/app_fonts.dart';
+import 'package:project_ease/core/utils/shake_detector.dart';
 import 'package:project_ease/features/cart/presentation/state/cart_state.dart';
 import 'package:project_ease/features/dashboard/presentation/bottom_navigation_screens/account_screen.dart';
 import 'package:project_ease/features/dashboard/presentation/bottom_navigation_screens/cart_screen.dart';
 import 'package:project_ease/features/dashboard/presentation/bottom_navigation_screens/home_screen.dart';
+import 'package:project_ease/features/dashboard/presentation/bottom_navigation_screens/my_orders_screen.dart';
+import 'package:project_ease/features/dashboard/presentation/bottom_navigation_screens/order_detail_screen.dart';
 import 'package:project_ease/features/dashboard/presentation/bottom_navigation_screens/search_screen.dart';
-import 'package:project_ease/core/utils/app_fonts.dart';
-import 'package:project_ease/apps/theme/app_colors.dart';
+import 'package:project_ease/features/order/presentation/view_model/order_view_model.dart';
 
 class BottomNavigationScreen extends ConsumerStatefulWidget {
   const BottomNavigationScreen({super.key});
@@ -19,10 +24,70 @@ class BottomNavigationScreen extends ConsumerStatefulWidget {
 class _BottomNavigationScreenState
     extends ConsumerState<BottomNavigationScreen> {
   int _selectedIndex = 0;
+  late final ShakeDetector _shakeDetector;
 
-  void _switchToSearch() {
-    setState(() => _selectedIndex = 1);
+  @override
+  void initState() {
+    super.initState();
+    _shakeDetector = ShakeDetector(onShake: _onShake);
+    _shakeDetector.start();
+
+    Future.microtask(
+      () => ref.read(orderViewModelProvider.notifier).loadOrders(),
+    );
   }
+
+  @override
+  void dispose() {
+    _shakeDetector.stop();
+    super.dispose();
+  }
+
+  // Shake handler
+
+  Future<void> _onShake() async {
+    if (!mounted) return;
+
+    HapticFeedback.mediumImpact();
+
+    final orders = ref.read(orderViewModelProvider).orders;
+
+    if (orders.isEmpty) {
+      await ref.read(orderViewModelProvider.notifier).loadOrders();
+    }
+
+    if (!mounted) return;
+
+    final readyOrders = ref
+        .read(orderViewModelProvider)
+        .orders
+        .where((o) => o.status == 'READY_FOR_COLLECTION')
+        .toList();
+
+    if (readyOrders.length == 1) {
+      // Exactly one ready order, go straight to its detail screen
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => OrderDetailScreen(orderId: readyOrders.first.orderId),
+        ),
+      );
+    } else if (readyOrders.length > 1) {
+      // Multiple ready orders, open My Orders pre-filtered
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) =>
+              const MyOrdersScreen(initialFilter: 'READY_FOR_COLLECTION'),
+        ),
+      );
+    } else {
+      // No ready orders, open My Orders with default view
+      Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (_) => const MyOrdersScreen()));
+    }
+  }
+
+  void _switchToSearch() => setState(() => _selectedIndex = 1);
 
   @override
   Widget build(BuildContext context) {

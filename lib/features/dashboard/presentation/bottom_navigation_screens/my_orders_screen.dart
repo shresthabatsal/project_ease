@@ -7,14 +7,16 @@ import 'package:project_ease/features/order/presentation/state/order_state.dart'
 import 'package:project_ease/features/order/presentation/view_model/order_view_model.dart';
 
 class MyOrdersScreen extends ConsumerStatefulWidget {
-  const MyOrdersScreen({super.key});
+  final String? initialFilter;
+
+  const MyOrdersScreen({super.key, this.initialFilter});
 
   @override
   ConsumerState<MyOrdersScreen> createState() => _MyOrdersScreenState();
 }
 
 class _MyOrdersScreenState extends ConsumerState<MyOrdersScreen> {
-  String? _activeFilter; // null = All
+  late String? _activeFilter = widget.initialFilter; // null = All
 
   static const _filters = [
     'PENDING',
@@ -84,7 +86,7 @@ class _MyOrdersScreenState extends ConsumerState<MyOrdersScreen> {
       ),
       body: Column(
         children: [
-          // Filter bar
+          // ── Filter bar ───────────────────────────────────────────────
           Container(
             color: Colors.white,
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
@@ -92,7 +94,7 @@ class _MyOrdersScreenState extends ConsumerState<MyOrdersScreen> {
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
-                  // All chip
+                  // "All" chip
                   _FilterChip(
                     label: 'All',
                     active: _activeFilter == null,
@@ -114,7 +116,7 @@ class _MyOrdersScreenState extends ConsumerState<MyOrdersScreen> {
             ),
           ),
 
-          // Orders list
+          // ── Orders list ──────────────────────────────────────────────
           Expanded(
             child: () {
               if (state.status == OrderStatus.loading && state.orders.isEmpty) {
@@ -169,7 +171,9 @@ class _MyOrdersScreenState extends ConsumerState<MyOrdersScreen> {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
 // Filter chip
+// ─────────────────────────────────────────────────────────────────────────────
 
 class _FilterChip extends StatelessWidget {
   final String label;
@@ -210,7 +214,9 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
 // Order card
+// ─────────────────────────────────────────────────────────────────────────────
 
 class _OrderCard extends StatelessWidget {
   final OrderEntity order;
@@ -265,7 +271,7 @@ class _OrderCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
+            // ── Header: ID + status badge ──────────────────────────
             Row(
               children: [
                 Expanded(
@@ -305,7 +311,7 @@ class _OrderCard extends StatelessWidget {
             const Divider(height: 1, color: Color(0xFFF0F0F0)),
             const SizedBox(height: 10),
 
-            // Items summary
+            // ── Items summary ──────────────────────────────────────
             Text(
               () {
                 final preview = order.items
@@ -327,7 +333,7 @@ class _OrderCard extends StatelessWidget {
 
             const SizedBox(height: 8),
 
-            // Footer
+            // ── Footer: date + pay badge + total ───────────────────
             Row(
               children: [
                 Icon(
@@ -380,7 +386,9 @@ class _OrderCard extends StatelessWidget {
   }
 }
 
-// Error view
+// ─────────────────────────────────────────────────────────────────────────────
+// Empty + Error views
+// ─────────────────────────────────────────────────────────────────────────────
 
 class _EmptyView extends StatelessWidget {
   final bool filtered;
