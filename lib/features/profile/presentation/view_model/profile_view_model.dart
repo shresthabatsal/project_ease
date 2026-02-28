@@ -1,104 +1,67 @@
-import 'dart:io';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:project_ease/features/auth/domain/entities/auth_entity.dart';
 import 'package:project_ease/features/profile/domain/usecases/get_profile_usecase.dart';
 import 'package:project_ease/features/profile/domain/usecases/update_profile_usecase.dart';
-import 'package:project_ease/features/profile/domain/usecases/upload_profile_picture_usecase.dart';
 import 'package:project_ease/features/profile/presentation/state/profile_state.dart';
 
 final profileViewModelProvider =
-    NotifierProvider<ProfileViewModel, ProfileState>(ProfileViewModel.new);
+    NotifierProvider<ProfileViewModel, ProfileState>(() => ProfileViewModel());
 
 class ProfileViewModel extends Notifier<ProfileState> {
-  late final UploadProfilePictureUsecase _uploadProfilePictureUsecase;
-  late final GetProfileUseCase _getProfileUseCase;
-  late final UpdateProfileUseCase _updateProfileUseCase;
+  late final GetProfileUsecase _getProfile;
+  late final UpdateProfileUsecase _updateProfile;
 
   @override
   ProfileState build() {
-    _uploadProfilePictureUsecase = ref.read(uploadProfilePictureUsecaseProvider);
-    _getProfileUseCase = ref.read(getProfileUseCaseProvider);
-    _updateProfileUseCase = ref.read(updateProfileUseCaseProvider);
+    _getProfile = ref.read(getProfileUsecaseProvider);
+    _updateProfile = ref.read(updateProfileUsecaseProvider);
+    Future.microtask(loadProfile);
     return const ProfileState();
   }
 
   Future<void> loadProfile() async {
     state = state.copyWith(status: ProfileStatus.loading);
-
-    final result = await _getProfileUseCase();
-
+    final result = await _getProfile();
     result.fold(
-      (failure) {
-        state = state.copyWith(
-          status: ProfileStatus.error,
-          errorMessage: failure.message,
-        );
-      },
-      (profile) {
-        state = state.copyWith(status: ProfileStatus.loaded, profile: profile);
-      },
+      (f) => state = state.copyWith(
+        status: ProfileStatus.error,
+        errorMessage: f.message,
+      ),
+      (user) =>
+          state = state.copyWith(status: ProfileStatus.loaded, user: user),
     );
   }
 
-  Future<String?> uploadProfilePicture(File imageFile) async {
-    state = state.copyWith(status: ProfileStatus.loading);
-
-    final result = await _uploadProfilePictureUsecase(imageFile);
-
+  Future<bool> updateProfile({
+    String? fullName,
+    String? phoneNumber,
+    String? email,
+    String? password,
+    String? profilePicturePath,
+    bool removeProfilePicture = false,
+  }) async {
+    state = state.copyWith(status: ProfileStatus.updating);
+    final result = await _updateProfile(
+      UpdateProfileParams(
+        fullName: fullName,
+        phoneNumber: phoneNumber,
+        email: email,
+        password: password,
+        profilePicturePath: profilePicturePath,
+        removeProfilePicture: removeProfilePicture,
+      ),
+    );
     return result.fold(
-      (failure) {
-        state = state.copyWith(
-          status: ProfileStatus.error,
-          errorMessage: failure.message,
-        );
-        return null;
-      },
-      (url) {
+      (f) {
         state = state.copyWith(
           status: ProfileStatus.loaded,
-          uploadedProfilePictureUrl: url,
+          errorMessage: f.message,
         );
-        return url;
+        return false;
       },
-    );
-  }
-
-  Future<void> updateProfile(AuthEntity updatedProfile) async {
-    state = state.copyWith(status: ProfileStatus.loading);
-
-    final result = await _updateProfileUseCase(updatedProfile);
-
-    result.fold(
-      (failure) {
-        state = state.copyWith(
-          status: ProfileStatus.error,
-          errorMessage: failure.message,
-        );
+      (user) {
+        state = state.copyWith(status: ProfileStatus.loaded, user: user);
+        return true;
       },
-      (updated) {
-        state = state.copyWith(
-          status: ProfileStatus.updated,
-          profile: updated,
-          uploadedProfilePictureUrl: null,
-        );
-      },
-    );
-  }
-
-  void clearError() {
-    state = state.copyWith(resetErrorMessage: true);
-  }
-
-  void clearUploadedPictureUrl() {
-    state = state.copyWith(resetUploadedPictureUrl: true);
-  }
-
-  void resetAfterUpload() {
-    state = state.copyWith(
-      status: ProfileStatus.initial,
-      resetUploadedPictureUrl: true,
-      resetErrorMessage: true,
     );
   }
 }

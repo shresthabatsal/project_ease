@@ -1,24 +1,43 @@
 import 'package:dartz/dartz.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:project_ease/core/error/failures.dart';
-import 'package:project_ease/core/usecases/app_usecase.dart';
-import 'package:project_ease/features/auth/domain/entities/auth_entity.dart';
 import 'package:project_ease/features/profile/data/repositories/profile_repository.dart';
+import 'package:project_ease/features/auth/domain/entities/auth_entity.dart';
 import 'package:project_ease/features/profile/domain/repositories/profile_repository.dart';
 
-final updateProfileUseCaseProvider = Provider<UpdateProfileUseCase>((ref) {
-  final repository = ref.read(profileRepositoryProvider);
-  return UpdateProfileUseCase(repository: repository);
-});
+final updateProfileUsecaseProvider = Provider<UpdateProfileUsecase>(
+  (ref) => UpdateProfileUsecase(ref.read(profileRepositoryProvider)),
+);
 
-class UpdateProfileUseCase
-    implements UsecaseWithParams<AuthEntity, AuthEntity> {
-  final IProfileRepository repository;
+class UpdateProfileParams {
+  final String? fullName;
+  final String? phoneNumber;
+  final String? email;
+  final String? password;
+  final String? profilePicturePath;
+  final bool removeProfilePicture;
 
-  UpdateProfileUseCase({required this.repository});
+  const UpdateProfileParams({
+    this.fullName,
+    this.phoneNumber,
+    this.email,
+    this.password,
+    this.profilePicturePath,
+    this.removeProfilePicture = false,
+  });
+}
 
-  @override
-  Future<Either<Failure, AuthEntity>> call(AuthEntity updatedProfile) {
-    return repository.updateProfile(updatedProfile);
-  }
+class UpdateProfileUsecase {
+  final IProfileRepository _repo;
+  UpdateProfileUsecase(this._repo);
+
+  Future<Either<Failure, AuthEntity>> call(UpdateProfileParams params) =>
+      _repo.updateProfile(
+        fullName: params.fullName,
+        phoneNumber: params.phoneNumber,
+        email: params.email,
+        password: params.password,
+        profilePicturePath: params.profilePicturePath,
+        removeProfilePicture: params.removeProfilePicture,
+      );
 }

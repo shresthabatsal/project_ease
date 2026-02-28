@@ -36,7 +36,7 @@ class _BottomNavigationScreenState
       HomeScreen(onNavigateToSearch: _switchToSearch),
       const SearchScreen(),
       const CartScreen(),
-      const AccountScreen(),
+      const ProfileScreen(),
     ];
 
     return Scaffold(

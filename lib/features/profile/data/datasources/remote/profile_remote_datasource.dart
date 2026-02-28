@@ -1,107 +1,58 @@
-import 'dart:io';
-
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:project_ease/core/api/api_client.dart';
 import 'package:project_ease/core/api/api_endpoints.dart';
-import 'package:project_ease/core/services/storage/token_service.dart';
 import 'package:project_ease/features/auth/data/models/auth_api_model.dart';
-import 'package:project_ease/features/profile/data/datasources/profile_datasource.dart';
 
-final profileRemoteDataSourceProvider = Provider<IProfileRemoteDataSource>((
-  ref,
-) {
-  return ProfileRemoteDataSource(
-    apiClient: ref.read(apiClientProvider),
-    tokenService: ref.read(tokenServiceProvider),
-  );
-});
+final profileRemoteDatasourceProvider = Provider<ProfileRemoteDatasource>(
+  (ref) => ProfileRemoteDatasource(apiClient: ref.read(apiClientProvider)),
+);
 
-class ProfileRemoteDataSource implements IProfileRemoteDataSource {
+class ProfileRemoteDatasource {
   final ApiClient _apiClient;
-  final TokenService _tokenService;
+  ProfileRemoteDatasource({required ApiClient apiClient})
+    : _apiClient = apiClient;
 
-  ProfileRemoteDataSource({
-    required ApiClient apiClient,
-    required TokenService tokenService,
-  }) : _apiClient = apiClient,
-       _tokenService = tokenService;
-
-  @override
   Future<AuthApiModel> getProfile() async {
-    final token = await _tokenService.getToken();
-    final response = await _apiClient.get(
-      ApiEndpoints.getProfile,
-      options: Options(headers: {'Authorization': 'Bearer $token'}),
-    );
-
-    final data = response.data['data'] ?? response.data;
-    return AuthApiModel.fromJson(data);
+    final response = await _apiClient.get(ApiEndpoints.getProfile);
+    return AuthApiModel.fromJson(response.data['data'] as Map<String, dynamic>);
   }
 
-  @override
-Future<AuthApiModel> updateProfile(AuthApiModel profile) async {
-  final token = await _tokenService.getToken();
+  Future<AuthApiModel> updateProfile({
+    String? fullName,
+    String? phoneNumber,
+    String? email,
+    String? password,
+    String? profilePicturePath,
+    bool removeProfilePicture = false,
+  }) async {
+    final fields = <String, dynamic>{
+      if (fullName != null) 'fullName': fullName,
+      if (phoneNumber != null) 'phoneNumber': phoneNumber,
+      if (email != null) 'email': email,
+      if (password != null) 'password': password,
+      if (removeProfilePicture) 'profilePictureUrl': '',
+    };
 
-  final formData = FormData.fromMap({
-    'fullName': profile.fullName,
-    'email': profile.email,
-    if (profile.phoneNumber != null && profile.phoneNumber!.isNotEmpty)
-      'phoneNumber': profile.phoneNumber,
-    // 'password': profile.password ?? '',
-    if (profile.profilePicture != null && profile.profilePicture!.isNotEmpty)
-      'profilePictureUrl': profile.profilePicture,
-  });
-
-  final response = await _apiClient.put(
-    ApiEndpoints.updateProfile,
-    data: formData,
-    options: Options(
-      headers: {
-        'Authorization': 'Bearer $token',
-      },
-    ),
-  );
-
-  final data = response.data['data'] ?? response.data;
-  return AuthApiModel.fromJson(data);
-}
-
-  @override
-  Future<String> uploadProfilePicture(File image) async {
-    final fileName = image.path.split('/').last;
-    final formData = FormData.fromMap({
-      'profilePicture': await MultipartFile.fromFile(
-        image.path,
-        filename: fileName,
-      ),
-    });
-
-    final token = await _tokenService.getToken();
-    final response = await _apiClient.uploadFile(
-      ApiEndpoints.uploadProfilePicture,
-      formData: formData,
-      options: Options(headers: {'Authorization': 'Bearer $token'}),
-    );
-
-    final Map<String, dynamic> responseData = response.data;
-
-    if (responseData['success'] != true) {
-      throw Exception(
-        'Upload failed: ${responseData['message'] ?? 'Unknown error'}',
+    if (profilePicturePath != null) {
+      final formData = FormData.fromMap({
+        ...fields,
+        'profilePicture': await MultipartFile.fromFile(profilePicturePath),
+      });
+      final response = await _apiClient.put(
+        ApiEndpoints.updateProfile,
+        data: formData,
+      );
+      return AuthApiModel.fromJson(
+        response.data['data'] as Map<String, dynamic>,
       );
     }
 
-    return response.data['data'];
-  }
-
-  @override
-  Future<bool> deleteAccount() async {
-    final token = await _tokenService.getToken();
-    await _apiClient.delete(
-      ApiEndpoints.deleteAccount,
-      options: Options(headers: {'Authorization': 'Bearer $token'}),
+    // JSON for text-only updates
+    final response = await _apiClient.put(
+      ApiEndpoints.updateProfile,
+      data: fields,
     );
-    return true;
+    return AuthApiModel.fromJson(response.data['data'] as Map<String, dynamic>);
   }
 }
