@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:project_ease/apps/theme/app_colors.dart';
-import 'package:project_ease/core/utils/snackbar_utils.dart';
 import 'package:project_ease/features/order/domain/entities/order_entity.dart';
 
 class OrderConfirmationScreen extends StatelessWidget {
@@ -73,54 +71,6 @@ class OrderConfirmationScreen extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    // Pickup code
-                    Text(
-                      'Pickup Code',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey.shade500,
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    GestureDetector(
-                      onTap: () {
-                        Clipboard.setData(
-                          ClipboardData(text: order.pickupCode),
-                        );
-                        SnackbarUtils.showSuccess(
-                          context,
-                          'Pickup code copied to clipboard',
-                        );
-                      },
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            order.pickupCode,
-                            style: TextStyle(
-                              fontSize: isTablet ? 26 : 22,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.primary,
-                              letterSpacing: 3,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Icon(
-                            Icons.copy_rounded,
-                            size: 16,
-                            color: AppColors.primary,
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 16),
-                      child: Divider(height: 1, color: Color(0xFFEEEEEE)),
-                    ),
-
                     _ConfirmRow(
                       label: 'Amount',
                       value: 'NPR ${order.totalAmount.toStringAsFixed(0)}',
@@ -162,7 +112,7 @@ class OrderConfirmationScreen extends StatelessWidget {
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
-                      'Show this pickup code at the store when collecting your order.',
+                      'Your pickup code will be shared once your payment is verified and the order is confirmed.',
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey.shade400,
