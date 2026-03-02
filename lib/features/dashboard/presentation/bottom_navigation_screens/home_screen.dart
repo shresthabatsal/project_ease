@@ -4,6 +4,8 @@ import 'package:project_ease/apps/theme/app_colors.dart';
 import 'package:project_ease/core/api/api_endpoints.dart';
 import 'package:project_ease/core/utils/app_fonts.dart';
 import 'package:project_ease/features/dashboard/presentation/product_detail_screen.dart';
+import 'package:project_ease/features/notification/presentation/pages/notification_screen.dart';
+import 'package:project_ease/features/notification/presentation/view_model/notification_view_model.dart';
 import 'package:project_ease/features/product/domain/entities/category_entity.dart';
 import 'package:project_ease/features/product/domain/entities/product_entity.dart';
 import 'package:project_ease/features/product/presentation/state/product_state.dart';
@@ -75,11 +77,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 8),
-            child: IconButton(
-              iconSize: isTablet ? 32 : 24,
-              icon: const Icon(Icons.notifications_none, color: Colors.black),
-              onPressed: () {},
-            ),
+            child: _NotificationBell(isTablet: isTablet),
           ),
         ],
       ),
@@ -127,7 +125,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  // ── Categories ──────────────────────────────────────────────────────────────
+  // Categories
 
   Widget _buildCategories(
     BuildContext context,
@@ -268,7 +266,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 }
 
-// Section Header
+// ─── Section Header ───────────────────────────────────────────────────────────
 
 class _SectionHeader extends StatelessWidget {
   final String title;
@@ -474,6 +472,58 @@ class _HomeProductCard extends StatelessWidget {
         color: Colors.grey.shade300,
         size: height * 0.35,
       ),
+    );
+  }
+}
+
+// Notification Bell
+
+class _NotificationBell extends ConsumerWidget {
+  final bool isTablet;
+  const _NotificationBell({required this.isTablet});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final unread = ref.watch(
+      notificationViewModelProvider.select((s) => s.unreadCount),
+    );
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        IconButton(
+          iconSize: isTablet ? 32 : 24,
+          icon: const Icon(Icons.notifications_none, color: Colors.black),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+            );
+          },
+        ),
+        if (unread > 0)
+          Positioned(
+            right: 6,
+            top: 6,
+            child: Container(
+              padding: const EdgeInsets.all(3),
+              decoration: const BoxDecoration(
+                color: Colors.red,
+                shape: BoxShape.circle,
+              ),
+              constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+              child: Text(
+                unread > 99 ? '99+' : '$unread',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w700,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
