@@ -29,6 +29,7 @@ class ApiEndpoints {
   // ========== Auth Endpoints ==========
   static const String register = '/auth/register';
   static const String login = '/auth/login';
+  static const String requestPasswordReset = '/auth/request-password-reset';
 
   // ========== User Profile Endpoints ==========
   static const String getProfile = '/auth/profile';
@@ -75,7 +76,8 @@ class ApiEndpoints {
 
   // ========== Payment Endpoints ==========
   static const String submitReceipt = '/user/payments/submit-receipt';
-  static String getOrderPayment(String orderId) => '/user/payments/order/$orderId';
+  static String getOrderPayment(String orderId) =>
+      '/user/payments/order/$orderId';
 
   // ========== Admin Endpoints ==========
   static const String adminStores = '/admin/stores';
@@ -90,4 +92,19 @@ class ApiEndpoints {
   static String adminProductById(String id) => '/admin/products/$id';
   static String adminProductsByStore(String storeId) =>
       '/admin/products/store/$storeId';
+  // ========== Notification Endpoints ==========
+  static const String getNotifications = '/user/notification';
+  static const String getUnreadCount = '/user/notification/unread/count';
+  static const String markAllAsRead = '/user/notification/mark-all/read';
+  static String markAsRead(String id) => '/user/notification/$id/read';
+  static String deleteNotification(String id) => '/user/notification/$id';
+
+  // ========== Rating Endpoints ==========
+  static const String createRating = '/user/ratings';
+  static String getRatingsByProduct(String productId) =>
+      '/user/ratings/product/$productId';
+  static String updateRating(String id) => '/user/ratings/$id';
+  static String deleteRating(String id) => '/user/ratings/$id';
+
+  static const String googleAuth = '/auth/google';
 }

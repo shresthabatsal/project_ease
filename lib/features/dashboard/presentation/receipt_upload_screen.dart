@@ -495,7 +495,7 @@ class _InfoCard extends StatelessWidget {
         children: [
           _InfoRow(
             label: 'Order ID',
-            value: '#${order.pickupCode}',
+            value: '#${order.otp}',
             isTablet: isTablet,
             valueColor: AppColors.primary,
           ),

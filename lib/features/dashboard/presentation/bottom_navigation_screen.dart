@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:project_ease/apps/theme/app_colors.dart';
+import 'package:project_ease/core/services/storage/app_settings.dart';
+import 'package:project_ease/core/services/websocket/socket_service.dart';
 import 'package:project_ease/core/utils/app_fonts.dart';
+import 'package:project_ease/core/utils/proximity_service.dart';
 import 'package:project_ease/core/utils/shake_detector.dart';
 import 'package:project_ease/features/cart/presentation/state/cart_state.dart';
 import 'package:project_ease/features/dashboard/presentation/bottom_navigation_screens/account_screen.dart';
@@ -11,6 +14,8 @@ import 'package:project_ease/features/dashboard/presentation/bottom_navigation_s
 import 'package:project_ease/features/dashboard/presentation/bottom_navigation_screens/my_orders_screen.dart';
 import 'package:project_ease/features/dashboard/presentation/bottom_navigation_screens/order_detail_screen.dart';
 import 'package:project_ease/features/dashboard/presentation/bottom_navigation_screens/search_screen.dart';
+import 'package:project_ease/features/notification/data/models/notification_api_model.dart';
+import 'package:project_ease/features/notification/presentation/view_model/notification_view_model.dart';
 import 'package:project_ease/features/order/presentation/view_model/order_view_model.dart';
 
 class BottomNavigationScreen extends ConsumerStatefulWidget {
@@ -24,55 +29,103 @@ class BottomNavigationScreen extends ConsumerStatefulWidget {
 class _BottomNavigationScreenState
     extends ConsumerState<BottomNavigationScreen> {
   int _selectedIndex = 0;
+  bool _isNearSensor = false;
+
   late final ShakeDetector _shakeDetector;
+  late final ProximityService _proximityService;
+  late final SocketService _socketService;
 
   @override
   void initState() {
     super.initState();
     _shakeDetector = ShakeDetector(onShake: _onShake);
-    _shakeDetector.start();
-
-    Future.microtask(
-      () => ref.read(orderViewModelProvider.notifier).loadOrders(),
+    _proximityService = ProximityService(
+      onNear: () => setState(() => _isNearSensor = true),
+      onFar: () => setState(() => _isNearSensor = false),
     );
+    _socketService = ref.read(socketServiceProvider);
+
+    Future.microtask(() {
+      if (ref.read(appSettingsProvider).shakeEnabled) _shakeDetector.start();
+
+      _proximityService.start();
+
+      ref.read(orderViewModelProvider.notifier).loadOrders();
+      ref.read(notificationViewModelProvider.notifier).loadUnreadCount();
+
+      _socketService.connect(
+        onNotification: _onRealtimeNotification,
+        onUnreadCount: _onUnreadCount,
+      );
+    });
   }
 
   @override
   void dispose() {
     _shakeDetector.stop();
+    _proximityService.stop();
+    _socketService.disconnect();
     super.dispose();
+  }
+
+  void _onSettingsChanged(AppSettings? prev, AppSettings next) {
+    if (next.shakeEnabled != prev?.shakeEnabled) {
+      next.shakeEnabled ? _shakeDetector.start() : _shakeDetector.stop();
+    }
+  }
+
+  // ── WebSocket handlers ────────────────────────────────────────────────────
+
+  void _onRealtimeNotification(Map<String, dynamic> payload) {
+    if (!mounted) return;
+    try {
+      final model = NotificationApiModel.fromJson({
+        ...payload,
+        'isRead': false,
+        'createdAt': payload['createdAt'] ?? DateTime.now().toIso8601String(),
+      });
+      final entity = model.toEntity();
+      ref
+          .read(notificationViewModelProvider.notifier)
+          .addRealtimeNotification(entity);
+    } catch (_) {
+      final current = ref.read(notificationViewModelProvider).unreadCount;
+      ref
+          .read(notificationViewModelProvider.notifier)
+          .setUnreadCount(current + 1);
+    }
+  }
+
+  void _onUnreadCount(int count) {
+    if (!mounted) return;
+    ref.read(notificationViewModelProvider.notifier).setUnreadCount(count);
   }
 
   // Shake handler
 
   Future<void> _onShake() async {
     if (!mounted) return;
-
     HapticFeedback.mediumImpact();
 
     final orders = ref.read(orderViewModelProvider).orders;
-
     if (orders.isEmpty) {
       await ref.read(orderViewModelProvider.notifier).loadOrders();
     }
-
     if (!mounted) return;
 
-    final readyOrders = ref
+    final ready = ref
         .read(orderViewModelProvider)
         .orders
         .where((o) => o.status == 'READY_FOR_COLLECTION')
         .toList();
 
-    if (readyOrders.length == 1) {
-      // Exactly one ready order, go straight to its detail screen
+    if (ready.length == 1) {
       Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (_) => OrderDetailScreen(orderId: readyOrders.first.orderId),
+          builder: (_) => OrderDetailScreen(orderId: ready.first.orderId),
         ),
       );
-    } else if (readyOrders.length > 1) {
-      // Multiple ready orders, open My Orders pre-filtered
+    } else if (ready.length > 1) {
       Navigator.of(context).push(
         MaterialPageRoute(
           builder: (_) =>
@@ -80,7 +133,6 @@ class _BottomNavigationScreenState
         ),
       );
     } else {
-      // No ready orders, open My Orders with default view
       Navigator.of(
         context,
       ).push(MaterialPageRoute(builder: (_) => const MyOrdersScreen()));
@@ -89,9 +141,13 @@ class _BottomNavigationScreenState
 
   void _switchToSearch() => setState(() => _selectedIndex = 1);
 
+  // Build
+
   @override
   Widget build(BuildContext context) {
     AppFonts.init(context);
+    ref.listen(appSettingsProvider, _onSettingsChanged);
+
     final bool isTablet = MediaQuery.of(context).size.width >= 600;
     final cartCount = ref.watch(
       cartViewModelProvider.select((s) => s.totalItems),
@@ -104,58 +160,70 @@ class _BottomNavigationScreenState
       const ProfileScreen(),
     ];
 
-    return Scaffold(
-      body: IndexedStack(index: _selectedIndex, children: screens),
-      bottomNavigationBar: BottomNavigationBar(
-        iconSize: isTablet ? 42 : 30,
-        items: [
-          const BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.search),
-            label: 'Search',
-          ),
-          BottomNavigationBarItem(
-            icon: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                const Icon(Icons.shopping_cart_outlined),
-                if (cartCount > 0)
-                  Positioned(
-                    right: -6,
-                    top: -6,
-                    child: Container(
-                      padding: const EdgeInsets.all(3),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        shape: BoxShape.circle,
-                      ),
-                      constraints: const BoxConstraints(
-                        minWidth: 16,
-                        minHeight: 16,
-                      ),
-                      child: Text(
-                        cartCount > 99 ? '99+' : '$cartCount',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 9,
-                          fontWeight: FontWeight.w700,
+    return Stack(
+      children: [
+        Scaffold(
+          body: IndexedStack(index: _selectedIndex, children: screens),
+          bottomNavigationBar: BottomNavigationBar(
+            iconSize: isTablet ? 42 : 30,
+            items: [
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.home_rounded),
+                label: 'Home',
+              ),
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.search_rounded),
+                label: 'Search',
+              ),
+              BottomNavigationBarItem(
+                icon: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    const Icon(Icons.shopping_cart_outlined),
+                    if (cartCount > 0)
+                      Positioned(
+                        right: -6,
+                        top: -6,
+                        child: Container(
+                          padding: const EdgeInsets.all(3),
+                          decoration: const BoxDecoration(
+                            color: AppColors.primary,
+                            shape: BoxShape.circle,
+                          ),
+                          constraints: const BoxConstraints(
+                            minWidth: 16,
+                            minHeight: 16,
+                          ),
+                          child: Text(
+                            cartCount > 99 ? '99+' : '$cartCount',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w700,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
                         ),
-                        textAlign: TextAlign.center,
                       ),
-                    ),
-                  ),
-              ],
-            ),
-            label: 'Cart',
+                  ],
+                ),
+                label: 'Cart',
+              ),
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.person_rounded),
+                label: 'Profile',
+              ),
+            ],
+            currentIndex: _selectedIndex,
+            onTap: (i) => setState(() => _selectedIndex = i),
           ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
+        ),
+
+        if (_isNearSensor)
+          const Positioned.fill(
+            child: IgnorePointer(child: ColoredBox(color: Colors.black)),
           ),
-        ],
-        currentIndex: _selectedIndex,
-        onTap: (index) => setState(() => _selectedIndex = index),
-      ),
+      ],
     );
   }
 }

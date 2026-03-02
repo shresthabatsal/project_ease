@@ -2,11 +2,13 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:project_ease/apps/routes/app_routes.dart';
 import 'package:project_ease/apps/theme/app_colors.dart';
 import 'package:project_ease/core/api/api_endpoints.dart';
 import 'package:project_ease/core/utils/snackbar_utils.dart';
-import 'package:project_ease/features/auth/data/datasources/local/auth_local_datasource.dart';
 import 'package:project_ease/features/auth/domain/entities/auth_entity.dart';
+import 'package:project_ease/features/auth/presentation/pages/login_screen.dart';
+import 'package:project_ease/features/auth/presentation/view_model/auth_view_model.dart';
 import 'package:project_ease/features/dashboard/presentation/bottom_navigation_screens/my_orders_screen.dart';
 import 'package:project_ease/features/profile/presentation/state/profile_state.dart';
 import 'package:project_ease/features/profile/presentation/view_model/profile_view_model.dart';
@@ -48,6 +50,10 @@ class ProfileScreen extends ConsumerWidget {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// _ProfileBody
+// ─────────────────────────────────────────────────────────────────────────────
+
 class _ProfileBody extends ConsumerWidget {
   final AuthEntity user;
   final bool isTablet;
@@ -63,7 +69,7 @@ class _ProfileBody extends ConsumerWidget {
       ),
       child: Column(
         children: [
-          // Avatar
+          // ── Avatar ──────────────────────────────────────────────────
           GestureDetector(
             onTap: () => _showAvatarSheet(context, user.profilePicture),
             child: Stack(
@@ -82,7 +88,7 @@ class _ProfileBody extends ConsumerWidget {
                     ),
                     child: const Icon(
                       Icons.camera_alt_rounded,
-                      color: Colors.white,
+                      color: Colors.black87,
                       size: 14,
                     ),
                   ),
@@ -106,15 +112,12 @@ class _ProfileBody extends ConsumerWidget {
 
           Text(
             user.email,
-            style: TextStyle(
-              fontSize: isTablet ? 14 : 13,
-              color: Colors.grey.shade500,
-            ),
+            style: TextStyle(fontSize: isTablet ? 14 : 13, color: Colors.grey),
           ),
 
           const SizedBox(height: 32),
 
-          // Editable info rows
+          // Account info rows
           _InfoCard(
             isTablet: isTablet,
             rows: [
@@ -284,16 +287,13 @@ class _ProfileBody extends ConsumerWidget {
         ),
         content: const Text(
           'Are you sure you want to log out of your account?',
-          style: TextStyle(fontSize: 14, color: Colors.black54),
+          style: TextStyle(fontSize: 14, color: Colors.grey),
         ),
         actionsPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(color: Colors.black54),
-            ),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
@@ -315,11 +315,10 @@ class _ProfileBody extends ConsumerWidget {
     );
 
     if (confirmed == true && context.mounted) {
-      await ref.read(authLocalDatasourceProvider).logoutUser();
+      // Use the same auth use case as AccountScreen
+      await ref.read(authViewModelProvider.notifier).logout();
       if (context.mounted) {
-        Navigator.of(
-          context,
-        ).pushNamedAndRemoveUntil('/login', (route) => false);
+        AppRoutes.pushAndRemoveUntil(context, const LoginScreen());
       }
     }
   }
@@ -391,6 +390,7 @@ class _ActionRow extends StatelessWidget {
   }
 }
 
+// Info  Card
 class _InfoCard extends StatelessWidget {
   final List<_EditableRow> rows;
   final bool isTablet;
@@ -417,7 +417,11 @@ class _InfoCard extends StatelessWidget {
           for (int i = 0; i < rows.length; i++) ...[
             rows[i],
             if (i < rows.length - 1)
-              const Divider(height: 1, indent: 56, color: Color(0xFFF0F0F0)),
+              const Divider(
+                height: 1,
+                indent: 56,
+                color: const Color(0xFFF0F0F0),
+              ),
           ],
         ],
       ),
@@ -469,7 +473,7 @@ class _EditableRow extends StatelessWidget {
                     label,
                     style: TextStyle(
                       fontSize: 11,
-                      color: Colors.grey.shade400,
+                      color: Colors.grey,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -513,11 +517,11 @@ class _Avatar extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: Colors.grey.shade100,
+        color: Colors.white,
         border: Border.all(color: Colors.white, width: 3),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withOpacity(0.04),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -540,10 +544,6 @@ class _Avatar extends StatelessWidget {
   Widget _placeholder() =>
       Icon(Icons.person_rounded, size: size * 0.5, color: Colors.grey.shade300);
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// _SheetWrapper  (bottom sheet scaffold)
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _SheetWrapper extends StatelessWidget {
   final String title;
@@ -582,7 +582,7 @@ class _SheetWrapper extends StatelessWidget {
                 width: 36,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
+                  color: Colors.grey,
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
@@ -605,8 +605,6 @@ class _SheetWrapper extends StatelessWidget {
     );
   }
 }
-
-// Avatar options sheet
 
 class _AvatarOptionsSheet extends ConsumerWidget {
   final String? currentUrl;
@@ -664,7 +662,7 @@ class _AvatarOptionsSheet extends ConsumerWidget {
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey.shade300,
+                color: Colors.grey,
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
@@ -1031,7 +1029,9 @@ class _PasswordSheetState extends ConsumerState<_PasswordSheet> {
   }
 }
 
-// Shared widgets
+// ─────────────────────────────────────────────────────────────────────────────
+// Shared: _FieldInput  +  _SaveButton
+// ─────────────────────────────────────────────────────────────────────────────
 
 class _FieldInput extends StatelessWidget {
   final TextEditingController controller;
@@ -1157,7 +1157,7 @@ class _ErrorView extends StatelessWidget {
           Text(
             message,
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.grey.shade500, fontSize: 14),
+            style: TextStyle(color: Colors.grey, fontSize: 14),
           ),
           const SizedBox(height: 16),
           TextButton(onPressed: onRetry, child: const Text('Try again')),
