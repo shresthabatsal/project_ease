@@ -7,6 +7,7 @@ import 'package:project_ease/features/cart/domain/entities/cart_entity.dart';
 import 'package:project_ease/features/cart/presentation/state/cart_state.dart';
 import 'package:project_ease/features/dashboard/presentation/checkout_screen.dart';
 import 'package:project_ease/features/product/domain/entities/product_entity.dart';
+import 'package:project_ease/features/rating/presentation/widgets/rating_seaction.dart';
 import 'package:project_ease/core/utils/snackbar_utils.dart';
 import 'package:project_ease/features/store/presentation/view_model/store_view_model.dart';
 
@@ -99,7 +100,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                 ),
               ),
 
-              // Product info
+              // ── Product info ────────────────────────────────────────────
               SliverToBoxAdapter(
                 child: Padding(
                   padding: EdgeInsets.fromLTRB(
@@ -252,7 +253,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                         Align(
                           alignment: Alignment.centerRight,
                           child: Text(
-                            'Total: NPR ${totalPrice.toStringAsFixed(0)}',
+                            'Total: NPR \${totalPrice.toStringAsFixed(0)}',
                             style: TextStyle(
                               fontSize: isTablet ? 14 : 13,
                               fontWeight: FontWeight.w600,
@@ -261,6 +262,13 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                           ),
                         ),
                       ],
+
+                      const SizedBox(height: 24),
+
+                      RatingSection(
+                        productId: widget.product.productId,
+                        isTablet: isTablet,
+                      ),
                     ],
                   ),
                 ),
@@ -310,7 +318,6 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                       storeName: storeState.selectedStore!.name,
                       items: [
                         CartItemEntity(
-                          cartItemId: 'buy_now',
                           product: widget.product,
                           quantity: _quantity,
                         ),
@@ -403,7 +410,7 @@ class _Badge extends StatelessWidget {
   }
 }
 
-// Stock Badge
+// ─── Stock Badge ──────────────────────────────────────────────────────────────
 
 class _StockBadge extends StatelessWidget {
   final String label;
