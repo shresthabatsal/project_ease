@@ -7,6 +7,7 @@ import 'package:project_ease/core/utils/snackbar_utils.dart';
 import 'package:project_ease/core/utils/app_fonts.dart';
 import 'package:project_ease/core/widgets/custom_button.dart';
 import 'package:project_ease/core/widgets/custom_text_form_field.dart';
+import 'package:project_ease/features/auth/presentation/pages/forgot_password_screen.dart';
 import 'package:project_ease/features/auth/presentation/pages/signup_screen.dart';
 import 'package:project_ease/features/auth/presentation/state/auth_state.dart';
 import 'package:project_ease/features/auth/presentation/view_model/auth_view_model.dart';
@@ -49,9 +50,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     AppRoutes.push(context, const SignupScreen());
   }
 
-  void _handleForgotPassword() {}
+  void _handleForgotPassword() {
+    AppRoutes.push(context, const ForgotPasswordScreen());
+  }
 
-  void _handleGoogleSignIn() {}
+  void _handleGoogleSignIn() async {
+    await ref.read(authViewModelProvider.notifier).loginWithGoogle();
+  }
 
   @override
   Widget build(BuildContext context) {

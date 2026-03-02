@@ -7,6 +7,7 @@ enum AuthStatus {
   authenticated,
   unauthenticated,
   registered,
+  passwordResetSent,
   error
 }
 
