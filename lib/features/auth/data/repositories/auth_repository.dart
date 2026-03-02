@@ -127,4 +127,50 @@ class AuthRepository implements IAuthRepository {
       }
     }
   }
+
+  @override
+  Future<Either<Failure, bool>> sendPasswordResetEmail(String email) async {
+    if (await _networkInfo.isConnected) {
+      try {
+        final result = await _authRemoteDatasource.sendPasswordResetEmail(
+          email,
+        );
+        return Right(result);
+      } on DioException catch (e) {
+        return Left(
+          ApiFailure(
+            message:
+                e.response?.data["message"] ?? "Failed to send reset email.",
+            statusCode: e.response?.statusCode,
+          ),
+        );
+      } catch (e) {
+        return Left(ApiFailure(message: e.toString()));
+      }
+    } else {
+      return const Left(ApiFailure(message: "No internet connection."));
+    }
+  }
+
+  @override
+Future<Either<Failure, AuthEntity>> googleAuth(String googleToken) async {
+  if (await _networkInfo.isConnected) {
+    try {
+      final apiModel = await _authRemoteDatasource.googleAuth(googleToken);
+      if (apiModel != null) {
+        return Right(apiModel.toEntity());
+      }
+      return const Left(ApiFailure(message: "Google authentication failed."));
+    } on DioException catch (e) {
+      return Left(ApiFailure(
+        message: e.response?.data["message"] ?? "Google authentication failed.",
+        statusCode: e.response?.statusCode,
+      ));
+    } catch (e) {
+      return Left(ApiFailure(message: e.toString()));
+    }
+  } else {
+    return const Left(ApiFailure(message: "No internet connection."));
+  }
+}
 }

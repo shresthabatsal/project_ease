@@ -76,4 +76,39 @@ class AuthRemoteDatasource implements IAuthRemoteDatasource {
 
     return user;
   }
+
+  @override
+  Future<bool> sendPasswordResetEmail(String email) async {
+    final response = await _apiClient.post(
+      ApiEndpoints.requestPasswordReset,
+      data: {'email': email},
+    );
+    return response.data["success"] == true;
+  }
+
+  @override
+  Future<AuthApiModel?> googleAuth(String googleToken) async {
+    final response = await _apiClient.post(
+      ApiEndpoints.googleAuth,
+      data: {'token': googleToken},
+    );
+
+    if (response.data["success"] == true) {
+      final data = response.data["data"] as Map<String, dynamic>;
+      final user = AuthApiModel.fromJson(data);
+
+      await _userSessionService.saveUserSession(
+        userId: user.id!,
+        email: user.email,
+        phoneNumber: user.phoneNumber,
+        fullName: user.fullName,
+      );
+
+      final token = response.data["token"];
+      await _tokenService.saveToken(token);
+
+      return user;
+    }
+    return null;
+  }
 }
