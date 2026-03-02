@@ -39,7 +39,7 @@ class OrderApiModel {
   final String? storeName;
   final List<OrderItemApiModel> items;
   final double totalAmount;
-  final String pickupCode;
+  final String? otp;
   final String? notes;
   final DateTime pickupDate;
   final String pickupTime;
@@ -53,7 +53,7 @@ class OrderApiModel {
     this.storeName,
     required this.items,
     required this.totalAmount,
-    required this.pickupCode,
+    this.otp,
     this.notes,
     required this.pickupDate,
     required this.pickupTime,
@@ -74,7 +74,7 @@ class OrderApiModel {
           .map((i) => OrderItemApiModel.fromJson(i as Map<String, dynamic>))
           .toList(),
       totalAmount: (json['totalAmount'] ?? 0).toDouble(),
-      pickupCode: json['pickupCode'] ?? '',
+      otp: json['otp'],
       notes: json['notes'],
       pickupDate: DateTime.tryParse(json['pickupDate'] ?? '') ?? DateTime.now(),
       pickupTime: json['pickupTime'] ?? '',
@@ -90,7 +90,7 @@ class OrderApiModel {
     storeName: storeName,
     items: items.map((i) => i.toEntity()).toList(),
     totalAmount: totalAmount,
-    pickupCode: pickupCode,
+    otp: otp,
     notes: notes,
     pickupDate: pickupDate,
     pickupTime: pickupTime,

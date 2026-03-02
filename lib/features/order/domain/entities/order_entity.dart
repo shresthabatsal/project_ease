@@ -25,7 +25,7 @@ class OrderEntity extends Equatable {
   final String? storeName;
   final List<OrderItemEntity> items;
   final double totalAmount;
-  final String pickupCode;
+  final String? otp;
   final String? notes;
   final DateTime pickupDate;
   final String pickupTime;
@@ -40,7 +40,7 @@ class OrderEntity extends Equatable {
     this.storeName,
     required this.items,
     required this.totalAmount,
-    required this.pickupCode,
+    this.otp,
     this.notes,
     required this.pickupDate,
     required this.pickupTime,

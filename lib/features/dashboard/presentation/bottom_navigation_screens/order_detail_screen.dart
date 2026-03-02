@@ -5,10 +5,8 @@ import 'package:project_ease/apps/theme/app_colors.dart';
 import 'package:project_ease/core/utils/snackbar_utils.dart';
 import 'package:project_ease/features/dashboard/presentation/receipt_upload_screen.dart';
 import 'package:project_ease/features/order/domain/entities/order_entity.dart';
-import 'package:project_ease/features/order/presentation/state/order_state.dart';
 import 'package:project_ease/features/order/presentation/view_model/order_view_model.dart';
 
-// Scoped provider
 final _orderDetailProvider = FutureProvider.autoDispose
     .family<OrderEntity?, String>((ref, orderId) async {
       final vm = ref.read(orderViewModelProvider.notifier);
@@ -77,6 +75,8 @@ class OrderDetailScreen extends ConsumerWidget {
   }
 }
 
+// Detail Body
+
 class _DetailBody extends ConsumerWidget {
   final OrderEntity order;
   final String orderId;
@@ -94,7 +94,9 @@ class _DetailBody extends ConsumerWidget {
   bool get _canCancel =>
       order.status != 'COLLECTED' && order.status != 'CANCELLED';
 
-  bool get _showPickupCode => order.paymentStatus == 'VERIFIED';
+  bool get _showOtp =>
+      (order.status == 'CONFIRMED' || order.status == 'READY_FOR_COLLECTION') &&
+      order.otp != null;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -115,8 +117,8 @@ class _DetailBody extends ConsumerWidget {
                 const SizedBox(height: 16),
 
                 // Pickup code
-                if (_showPickupCode) ...[
-                  _PickupCodeCard(code: order.pickupCode, isTablet: isTablet),
+                if (_showOtp) ...[
+                  _OtpCard(otp: order.otp!, isTablet: isTablet),
                   const SizedBox(height: 16),
                 ],
 
@@ -458,18 +460,18 @@ class _StatusBanner extends StatelessWidget {
 
 // Pickup code card
 
-class _PickupCodeCard extends StatelessWidget {
-  final String code;
+class _OtpCard extends StatelessWidget {
+  final String otp;
   final bool isTablet;
 
-  const _PickupCodeCard({required this.code, required this.isTablet});
+  const _OtpCard({required this.otp, required this.isTablet});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        Clipboard.setData(ClipboardData(text: code));
-        SnackbarUtils.showSuccess(context, 'Pickup code copied!');
+        Clipboard.setData(ClipboardData(text: otp));
+        SnackbarUtils.showSuccess(context, 'OTP copied!');
       },
       child: Container(
         width: double.infinity,
@@ -492,7 +494,7 @@ class _PickupCodeCard extends StatelessWidget {
         child: Column(
           children: [
             const Text(
-              'Pickup Code',
+              'OTP',
               style: TextStyle(
                 color: Colors.white70,
                 fontSize: 12,
@@ -505,7 +507,7 @@ class _PickupCodeCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  code,
+                  otp,
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: isTablet ? 30 : 26,
@@ -519,7 +521,7 @@ class _PickupCodeCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             const Text(
-              'Tap to copy · Show at the store to collect your order',
+              'Tap to copy · Show this OTP at the store to collect your order',
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.white60, fontSize: 11),
             ),

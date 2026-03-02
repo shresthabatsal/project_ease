@@ -86,7 +86,7 @@ class _MyOrdersScreenState extends ConsumerState<MyOrdersScreen> {
       ),
       body: Column(
         children: [
-          // ── Filter bar ───────────────────────────────────────────────
+          // Filter bar
           Container(
             color: Colors.white,
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
@@ -116,7 +116,7 @@ class _MyOrdersScreenState extends ConsumerState<MyOrdersScreen> {
             ),
           ),
 
-          // ── Orders list ──────────────────────────────────────────────
+          // Orders list
           Expanded(
             child: () {
               if (state.status == OrderStatus.loading && state.orders.isEmpty) {
@@ -171,10 +171,7 @@ class _MyOrdersScreenState extends ConsumerState<MyOrdersScreen> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Filter chip
-// ─────────────────────────────────────────────────────────────────────────────
-
+// Filter Chip
 class _FilterChip extends StatelessWidget {
   final String label;
   final bool active;
@@ -214,9 +211,7 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Order card
-// ─────────────────────────────────────────────────────────────────────────────
+// Order Card
 
 class _OrderCard extends StatelessWidget {
   final OrderEntity order;
@@ -271,7 +266,6 @@ class _OrderCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Header: ID + status badge ──────────────────────────
             Row(
               children: [
                 Expanded(
@@ -311,7 +305,7 @@ class _OrderCard extends StatelessWidget {
             const Divider(height: 1, color: Color(0xFFF0F0F0)),
             const SizedBox(height: 10),
 
-            // ── Items summary ──────────────────────────────────────
+            // Items summary
             Text(
               () {
                 final preview = order.items
@@ -331,9 +325,49 @@ class _OrderCard extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
 
+            // OTP chip
+            if (order.otp != null &&
+                (order.status == 'CONFIRMED' ||
+                    order.status == 'READY_FOR_COLLECTION')) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.lock_outline_rounded,
+                          size: 13,
+                          color: AppColors.primary,
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          'OTP: ${order.otp}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.primary,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+
             const SizedBox(height: 8),
 
-            // ── Footer: date + pay badge + total ───────────────────
             Row(
               children: [
                 Icon(
@@ -385,10 +419,6 @@ class _OrderCard extends StatelessWidget {
     );
   }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Empty + Error views
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _EmptyView extends StatelessWidget {
   final bool filtered;
