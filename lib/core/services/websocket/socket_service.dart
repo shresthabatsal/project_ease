@@ -12,6 +12,11 @@ class SocketService {
   final UserSessionService _session;
   io.Socket? _socket;
 
+  // Mutable callbacks, can be updated after initial connect
+  void Function(Map<String, dynamic>)? _onNotification;
+  void Function(int)? _onUnreadCount;
+  void Function(Map<String, dynamic>)? _onTicketMessage;
+
   SocketService({required UserSessionService session}) : _session = session;
 
   bool get isConnected => _socket?.connected ?? false;
@@ -19,7 +24,12 @@ class SocketService {
   void connect({
     void Function(Map<String, dynamic> payload)? onNotification,
     void Function(int count)? onUnreadCount,
+    void Function(Map<String, dynamic> payload)? onTicketMessage,
   }) {
+    _onNotification = onNotification;
+    _onUnreadCount = onUnreadCount;
+    _onTicketMessage = onTicketMessage;
+
     final userId = _session.getUserId();
     if (userId == null || userId.isEmpty) return;
     if (isConnected) return;
@@ -38,16 +48,25 @@ class SocketService {
     _socket!.on('connect', (_) => _socket!.emit('get_unread_count'));
 
     _socket!.on('notification_received', (data) {
-      if (data is Map<String, dynamic>) onNotification?.call(data);
+      if (data is Map<String, dynamic>) _onNotification?.call(data);
     });
 
     _socket!.on('unread_count', (data) {
       if (data is Map<String, dynamic>) {
-        onUnreadCount?.call(data['count'] as int? ?? 0);
+        _onUnreadCount?.call(data['count'] as int? ?? 0);
       }
     });
 
+    // Backend emits 'new_message' to the ticket_<id> room when admin sends
+    _socket!.on('new_message', (data) {
+      if (data is Map<String, dynamic>) _onTicketMessage?.call(data);
+    });
+
     _socket!.on('error', (_) {});
+  }
+
+  void setTicketMessageCallback(void Function(Map<String, dynamic>)? callback) {
+    _onTicketMessage = callback;
   }
 
   void disconnect() {
@@ -55,6 +74,19 @@ class SocketService {
     _socket?.dispose();
     _socket = null;
   }
+
+  void joinTicket(String ticketId) {
+    if (isConnected) {
+      _socket?.emit('join_ticket', ticketId);
+    } else {
+      // Retry once the socket connects
+      _socket?.once('connect', (_) {
+        _socket?.emit('join_ticket', ticketId);
+      });
+    }
+  }
+
+  void leaveTicket(String ticketId) => _socket?.emit('leave_ticket', ticketId);
 
   void emitMarkAsRead(String notificationId) =>
       _socket?.emit('mark_as_read', notificationId);
