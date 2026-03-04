@@ -4,4 +4,9 @@ import 'package:project_ease/features/store/domain/entities/store_entity.dart';
 
 abstract interface class IStoreRepository {
   Future<Either<Failure, List<StoreEntity>>> getAllStores();
+  Future<Either<Failure, List<StoreEntity>>> getNearestStores({
+    required double latitude,
+    required double longitude,
+    double maxDistance,
+  });
 }

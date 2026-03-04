@@ -51,5 +51,7 @@
 	<string>This app requires microphone access to record audio.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>This app requires photo library access to select photos and videos.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Used to find the nearest store to you</string>
 </dict>
 </plist>

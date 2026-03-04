@@ -41,6 +41,7 @@ class ApiEndpoints {
   // ========== Store Endpoints ==========
   static const String getAllStores = '/user/stores';
   static String getStoreById(String id) => '/user/stores/$id';
+  static const String getNearestStores = '/user/stores/nearest/by-location';
 
   // ========== Category Endpoints ==========
   static const String getAllCategories = '/user/categories';
@@ -107,4 +108,15 @@ class ApiEndpoints {
   static String deleteRating(String id) => '/user/ratings/$id';
 
   static const String googleAuth = '/auth/google';
+
+  // ========== Support / Ticket Endpoints ==========
+  static const String createTicket = '/support/tickets';
+  static const String getUserTickets = '/support/tickets/my-tickets';
+  static String getTicketById(String id) => '/support/tickets/$id';
+  static String closeTicket(String id) => '/support/tickets/$id/close';
+
+  // ========== Support / Message Endpoints ==========
+  static const String sendMessage = '/support/messages';
+  static String getTicketMessages(String ticketId) =>
+      '/support/messages/$ticketId';
 }
