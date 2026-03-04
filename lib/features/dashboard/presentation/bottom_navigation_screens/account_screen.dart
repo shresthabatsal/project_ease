@@ -12,6 +12,7 @@ import 'package:project_ease/features/auth/presentation/view_model/auth_view_mod
 import 'package:project_ease/features/dashboard/presentation/bottom_navigation_screens/my_orders_screen.dart';
 import 'package:project_ease/features/profile/presentation/state/profile_state.dart';
 import 'package:project_ease/features/profile/presentation/view_model/profile_view_model.dart';
+import 'package:project_ease/features/support/presentation/pages/my_tickets_screen.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -187,6 +188,19 @@ class _ProfileBody extends ConsumerWidget {
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const MyOrdersScreen()),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          // Raise Support Ticket
+          _ActionRow(
+            icon: Icons.receipt_long_outlined,
+            label: 'Raise Support Ticket',
+            isTablet: isTablet,
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const MyTicketsScreen()),
             ),
           ),
 

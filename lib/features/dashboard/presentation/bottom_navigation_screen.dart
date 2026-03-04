@@ -17,6 +17,8 @@ import 'package:project_ease/features/dashboard/presentation/bottom_navigation_s
 import 'package:project_ease/features/notification/data/models/notification_api_model.dart';
 import 'package:project_ease/features/notification/presentation/view_model/notification_view_model.dart';
 import 'package:project_ease/features/order/presentation/view_model/order_view_model.dart';
+import 'package:project_ease/features/support/data/models/message_api_model.dart';
+import 'package:project_ease/features/support/presentation/view_model/support_view_model.dart';
 
 class BottomNavigationScreen extends ConsumerStatefulWidget {
   const BottomNavigationScreen({super.key});
@@ -56,6 +58,7 @@ class _BottomNavigationScreenState
       _socketService.connect(
         onNotification: _onRealtimeNotification,
         onUnreadCount: _onUnreadCount,
+        onTicketMessage: _onRealtimeTicketMessage,
       );
     });
   }
@@ -74,7 +77,7 @@ class _BottomNavigationScreenState
     }
   }
 
-  // ── WebSocket handlers ────────────────────────────────────────────────────
+  // WebSocket handlers
 
   void _onRealtimeNotification(Map<String, dynamic> payload) {
     if (!mounted) return;
@@ -99,6 +102,16 @@ class _BottomNavigationScreenState
   void _onUnreadCount(int count) {
     if (!mounted) return;
     ref.read(notificationViewModelProvider.notifier).setUnreadCount(count);
+  }
+
+  void _onRealtimeTicketMessage(Map<String, dynamic> payload) {
+    if (!mounted) return;
+    try {
+      final model = MessageApiModel.fromJson(payload);
+      ref
+          .read(chatViewModelProvider.notifier)
+          .addRealtimeMessage(model.toEntity());
+    } catch (_) {}
   }
 
   // Shake handler
@@ -140,8 +153,6 @@ class _BottomNavigationScreenState
   }
 
   void _switchToSearch() => setState(() => _selectedIndex = 1);
-
-  // Build
 
   @override
   Widget build(BuildContext context) {

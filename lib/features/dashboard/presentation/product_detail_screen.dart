@@ -7,7 +7,7 @@ import 'package:project_ease/features/cart/domain/entities/cart_entity.dart';
 import 'package:project_ease/features/cart/presentation/state/cart_state.dart';
 import 'package:project_ease/features/dashboard/presentation/checkout_screen.dart';
 import 'package:project_ease/features/product/domain/entities/product_entity.dart';
-import 'package:project_ease/features/rating/presentation/widgets/rating_seaction.dart';
+import 'package:project_ease/features/rating/presentation/widgets/rating_section.dart';
 import 'package:project_ease/core/utils/snackbar_utils.dart';
 import 'package:project_ease/features/store/presentation/view_model/store_view_model.dart';
 
@@ -100,7 +100,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                 ),
               ),
 
-              // ── Product info ────────────────────────────────────────────
+              // Product info
               SliverToBoxAdapter(
                 child: Padding(
                   padding: EdgeInsets.fromLTRB(
@@ -410,7 +410,7 @@ class _Badge extends StatelessWidget {
   }
 }
 
-// ─── Stock Badge ──────────────────────────────────────────────────────────────
+// Stock Badge
 
 class _StockBadge extends StatelessWidget {
   final String label;

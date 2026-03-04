@@ -1,10 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:project_ease/features/rating/domain/entitties/rating_entity.dart';
-import 'package:project_ease/features/rating/domain/usecases/create_rating_usecase.dart';
-import 'package:project_ease/features/rating/domain/usecases/delete_rating_usecase.dart';
-import 'package:project_ease/features/rating/domain/usecases/get_ratings_usecase.dart';
-import 'package:project_ease/features/rating/domain/usecases/update_rating_usecase.dart';
 
 enum RatingStatus { initial, loading, success, submitting, error }
 
