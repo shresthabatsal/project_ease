@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:project_ease/apps/theme/app_colors.dart';
-import 'package:project_ease/features/product/presentation/view_model/product_view_model.dart';
 import 'package:project_ease/features/store/domain/entities/store_entity.dart';
+import 'package:project_ease/features/store/presentation/pages/store_map_screen.dart';
 import 'package:project_ease/features/store/presentation/state/store_state.dart';
 import 'package:project_ease/features/store/presentation/view_model/store_view_model.dart';
 
@@ -84,28 +84,47 @@ class StoreDropdown extends ConsumerWidget {
       builder: (ctx) => _StorePickerSheet(
         stores: storeState.stores,
         selectedStore: storeState.selectedStore,
+        isTablet: MediaQuery.of(context).size.width >= 600,
         onSelect: (store) {
           ref.read(storeViewModelProvider.notifier).selectStore(store);
-          // Reload products + categories when store changes
-          ref
-              .read(productViewModelProvider.notifier)
-              .loadForStore(store.storeId);
           Navigator.pop(ctx);
+        },
+        onViewMap: () {
+          Navigator.pop(ctx);
+          _openMap(context, ref);
         },
       ),
     );
   }
+
+  Future<void> _openMap(BuildContext context, WidgetRef ref) async {
+    final picked = await Navigator.push<StoreEntity>(
+      context,
+      MaterialPageRoute(builder: (_) => const StoreMapScreen()),
+    );
+    if (picked != null) {
+      ref.read(storeViewModelProvider.notifier).selectStore(picked);
+    }
+  }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Bottom sheet
+// ─────────────────────────────────────────────────────────────────────────────
 
 class _StorePickerSheet extends StatelessWidget {
   final List<StoreEntity> stores;
   final StoreEntity? selectedStore;
+  final bool isTablet;
   final void Function(StoreEntity) onSelect;
+  final VoidCallback onViewMap;
 
   const _StorePickerSheet({
     required this.stores,
     required this.selectedStore,
+    required this.isTablet,
     required this.onSelect,
+    required this.onViewMap,
   });
 
   @override
@@ -116,6 +135,7 @@ class _StorePickerSheet extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Handle
           Center(
             child: Container(
               width: 40,
@@ -127,9 +147,47 @@ class _StorePickerSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          const Text(
-            'Select a Store',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+          Row(
+            children: [
+              const Text(
+                'Select a Store',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+              ),
+              const Spacer(),
+              // View on map button
+              GestureDetector(
+                onTap: onViewMap,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.map_outlined,
+                        size: 14,
+                        color: AppColors.primary,
+                      ),
+                      const SizedBox(width: 4),
+                      const Text(
+                        'View on map',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
           ...stores.map((store) {
@@ -155,6 +213,17 @@ class _StorePickerSheet extends StatelessWidget {
                   color: isSelected ? AppColors.primary : Colors.black87,
                 ),
               ),
+              subtitle: store.description != null
+                  ? Text(
+                      store.description!,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade500,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    )
+                  : null,
               trailing: isSelected
                   ? const Icon(Icons.check_circle, color: AppColors.primary)
                   : null,
