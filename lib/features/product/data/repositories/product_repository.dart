@@ -4,6 +4,7 @@ import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:project_ease/core/error/failures.dart';
+import 'package:project_ease/features/product/data/datasources/local/product_local_datasource.dart';
 import 'package:project_ease/features/product/data/datasources/product_datasource.dart';
 import 'package:project_ease/features/product/domain/entities/category_entity.dart';
 import 'package:project_ease/features/product/domain/entities/product_entity.dart';
@@ -12,14 +13,21 @@ import 'package:project_ease/features/product/domain/repositories/product_reposi
 final productRepositoryProvider = Provider<IProductRepository>(
   (ref) => ProductRepository(
     remoteDatasource: ref.read(productRemoteDatasourceProvider),
+    localDatasource: ref.read(productLocalDatasourceProvider),
   ),
 );
 
 class ProductRepository implements IProductRepository {
   final IProductRemoteDatasource _remote;
-  ProductRepository({required IProductRemoteDatasource remoteDatasource})
-    : _remote = remoteDatasource;
+  final ProductLocalDatasource _local;
 
+  ProductRepository({
+    required IProductRemoteDatasource remoteDatasource,
+    required ProductLocalDatasource localDatasource,
+  }) : _remote = remoteDatasource,
+       _local = localDatasource;
+
+  // Error handling
   String _extractErrorMessage(DioException e, String fallback) {
     try {
       final data = e.response?.data;
@@ -48,18 +56,29 @@ class ProductRepository implements IProductRepository {
     return Left(ApiFailure(message: e.toString()));
   }
 
+  // Products by store
   @override
   Future<Either<Failure, List<ProductEntity>>> getProductsByStore(
     String storeId,
   ) async {
     try {
       final models = await _remote.getProductsByStore(storeId);
+      // Save fresh data to cache
+      await _local.saveProductsForStore(storeId, models);
       return Right(models.map((m) => m.toEntity()).toList());
     } catch (e) {
+      // Network failed, try cache
+      try {
+        final cached = await _local.getProductsForStore(storeId);
+        if (cached.isNotEmpty) {
+          return Right(cached.map((m) => m.toEntity()).toList());
+        }
+      } catch (_) {}
       return _handleError(e, 'Failed to load products for store.');
     }
   }
 
+  // Products by category, not cached
   @override
   Future<Either<Failure, List<ProductEntity>>> getProductsByStoreAndCategory(
     String storeId,
@@ -72,6 +91,15 @@ class ProductRepository implements IProductRepository {
       );
       return Right(models.map((m) => m.toEntity()).toList());
     } catch (e) {
+      // Fallback
+      try {
+        final cached = await _local.getProductsForStore(storeId);
+        final filtered = cached
+            .where((m) => m.categoryId == categoryId)
+            .map((m) => m.toEntity())
+            .toList();
+        if (filtered.isNotEmpty) return Right(filtered);
+      } catch (_) {}
       return _handleError(e, 'Failed to load products for category.');
     }
   }
@@ -88,6 +116,15 @@ class ProductRepository implements IProductRepository {
       );
       return Right(models.map((m) => m.toEntity()).toList());
     } catch (e) {
+      // Fallback: filter cached store products by subcategoryId
+      try {
+        final cached = await _local.getProductsForStore(storeId);
+        final filtered = cached
+            .where((m) => m.subcategoryId == subcategoryId)
+            .map((m) => m.toEntity())
+            .toList();
+        if (filtered.isNotEmpty) return Right(filtered);
+      } catch (_) {}
       return _handleError(e, 'Failed to load products for subcategory.');
     }
   }
@@ -121,12 +158,23 @@ class ProductRepository implements IProductRepository {
     }
   }
 
+  // Categories, cached
+
   @override
   Future<Either<Failure, List<CategoryEntity>>> getAllCategories() async {
     try {
       final models = await _remote.getAllCategories();
+      // Save fresh data to cache
+      await _local.saveCategories(models);
       return Right(models.map((m) => m.toEntity()).toList());
     } catch (e) {
+      // Network failed, try cache
+      try {
+        final cached = await _local.getCategories();
+        if (cached.isNotEmpty) {
+          return Right(cached.map((m) => m.toEntity()).toList());
+        }
+      } catch (_) {}
       return _handleError(e, 'Failed to load categories.');
     }
   }
