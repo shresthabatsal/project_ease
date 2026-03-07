@@ -9,6 +9,39 @@ import 'package:project_ease/features/product/domain/entities/product_entity.dar
 import 'package:project_ease/features/product/presentation/state/product_state.dart';
 import 'package:project_ease/features/product/presentation/view_model/product_view_model.dart';
 import 'package:project_ease/features/store/presentation/view_model/store_view_model.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+class _RecentSearches {
+  static const _key = 'recent_searches';
+  static const _max = 8;
+
+  static Future<List<String>> load() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getStringList(_key) ?? [];
+  }
+
+  static Future<void> add(String query) async {
+    if (query.trim().isEmpty) return;
+    final prefs = await SharedPreferences.getInstance();
+    final list = prefs.getStringList(_key) ?? [];
+    list.remove(query);
+    list.insert(0, query);
+    if (list.length > _max) list.removeLast();
+    await prefs.setStringList(_key, list);
+  }
+
+  static Future<void> remove(String query) async {
+    final prefs = await SharedPreferences.getInstance();
+    final list = prefs.getStringList(_key) ?? [];
+    list.remove(query);
+    await prefs.setStringList(_key, list);
+  }
+
+  static Future<void> clear() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_key);
+  }
+}
 
 class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({super.key});
@@ -18,9 +51,7 @@ class SearchScreen extends ConsumerStatefulWidget {
 }
 
 class _SearchScreenState extends ConsumerState<SearchScreen> {
-  final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  Timer? _debounce;
 
   @override
   void initState() {
@@ -40,10 +71,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   @override
   void dispose() {
-    _searchController.dispose();
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
-    _debounce?.cancel();
     super.dispose();
   }
 
@@ -57,36 +86,50 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     }
   }
 
-  void _onSearchChanged(String query, String storeId) {
-    _debounce?.cancel();
-    if (query.isEmpty) {
-      ref.read(productViewModelProvider.notifier).clearSearch(storeId);
-      return;
-    }
-    _debounce = Timer(const Duration(milliseconds: 500), () {
-      ref
-          .read(productViewModelProvider.notifier)
-          .searchProducts(storeId, query);
-    });
-  }
-
   void _goBack(String storeId) {
-    _searchController.clear();
     ref.read(productViewModelProvider.notifier).clearSearch(storeId);
   }
 
   void _showFilterSheet(BuildContext context, String storeId) {
-    final productState = ref.read(productViewModelProvider);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _FilterSheet(
-        storeId: storeId,
-        storeProducts: productState.storeProducts,
-        selectedCategory: productState.selectedCategory,
+      builder: (_) => _FilterSheet(storeId: storeId),
+    );
+  }
+
+  Future<void> _openSearchOverlay(String storeId) async {
+    final query = await Navigator.of(context).push<String>(
+      PageRouteBuilder(
+        opaque: false,
+        barrierColor: Colors.black38,
+        transitionDuration: const Duration(milliseconds: 220),
+        pageBuilder: (_, __, ___) => _SearchOverlay(storeId: storeId),
+        transitionsBuilder: (_, animation, __, child) {
+          return FadeTransition(
+            opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+            child: SlideTransition(
+              position:
+                  Tween<Offset>(
+                    begin: const Offset(0, -0.04),
+                    end: Offset.zero,
+                  ).animate(
+                    CurvedAnimation(parent: animation, curve: Curves.easeOut),
+                  ),
+              child: child,
+            ),
+          );
+        },
       ),
     );
+
+    if (query != null && query.isNotEmpty && mounted) {
+      await _RecentSearches.add(query);
+      ref
+          .read(productViewModelProvider.notifier)
+          .searchProducts(storeId, query);
+    }
   }
 
   @override
@@ -95,18 +138,17 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final storeState = ref.watch(storeViewModelProvider);
     final productState = ref.watch(productViewModelProvider);
 
-    // Store change, reload
+    // Store change → reload
     ref.listen(storeViewModelProvider, (prev, next) {
       if (prev?.selectedStore?.storeId != next.selectedStore?.storeId &&
           next.selectedStore != null) {
-        _searchController.clear();
         ref
             .read(productViewModelProvider.notifier)
             .loadForStore(next.selectedStore!.storeId);
       }
     });
 
-    // Category selected from home screen, fetch its products
+    // Category selected from home screen → clear + fetch
     ref.listen(productViewModelProvider, (prev, next) {
       if (prev?.selectedCategory == null &&
           next.selectedCategory != null &&
@@ -124,7 +166,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final selectedStoreId = storeState.selectedStore?.storeId;
     final showProducts = productState.showProducts;
 
-    // Title
     String headerTitle = '';
     if (productState.selectedCategory != null) {
       headerTitle = productState.selectedCategory!.name;
@@ -140,14 +181,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (selectedStoreId == null)
-            // No store
-            ...[
-              _PlainSearchBar(
-                controller: _searchController,
+            if (selectedStoreId == null) ...[
+              _TappableSearchBar(
                 isTablet: isTablet,
-                onChanged: (_) {},
-                onClear: () {},
+                currentQuery: '',
+                onTap: () {},
               ),
               const Expanded(
                 child: Center(
@@ -158,16 +196,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 ),
               ),
             ] else if (!showProducts) ...[
-              _PlainSearchBar(
-                controller: _searchController,
+              // Tappable search bar — opens overlay
+              _TappableSearchBar(
                 isTablet: isTablet,
-                onChanged: (q) => _onSearchChanged(q, selectedStoreId),
-                onClear: () {
-                  _searchController.clear();
-                  ref
-                      .read(productViewModelProvider.notifier)
-                      .clearSearch(selectedStoreId);
-                },
+                currentQuery: productState.searchQuery,
+                onTap: () => _openSearchOverlay(selectedStoreId),
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 0, 16, 10),
@@ -192,27 +225,19 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       ),
               ),
             ] else ...[
-              // Back button and title
               _ProductModeHeader(
                 title: headerTitle,
                 isTablet: isTablet,
                 onBack: () => _goBack(selectedStoreId),
               ),
-              // Search bar with filter button
+              // Tappable search bar with filter button
               _SearchBarWithFilter(
-                controller: _searchController,
                 isTablet: isTablet,
+                currentQuery: productState.searchQuery,
                 hasActiveFilter: productState.filter.hasActiveFilters,
-                onChanged: (q) => _onSearchChanged(q, selectedStoreId),
-                onClear: () {
-                  _searchController.clear();
-                  ref
-                      .read(productViewModelProvider.notifier)
-                      .clearSearch(selectedStoreId);
-                },
+                onTap: () => _openSearchOverlay(selectedStoreId),
                 onFilterTap: () => _showFilterSheet(context, selectedStoreId),
               ),
-              // Content: product list
               Expanded(
                 child: productState.status == ProductStatus.loading
                     ? const Center(child: CircularProgressIndicator())
@@ -234,63 +259,408 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   }
 }
 
-class _PlainSearchBar extends StatelessWidget {
-  final TextEditingController controller;
-  final bool isTablet;
-  final ValueChanged<String> onChanged;
-  final VoidCallback onClear;
+// Search Overlay
 
-  const _PlainSearchBar({
-    required this.controller,
+class _SearchOverlay extends StatefulWidget {
+  final String storeId;
+  const _SearchOverlay({required this.storeId});
+
+  @override
+  State<_SearchOverlay> createState() => _SearchOverlayState();
+}
+
+class _SearchOverlayState extends State<_SearchOverlay> {
+  final TextEditingController _ctrl = TextEditingController();
+  final FocusNode _focus = FocusNode();
+  List<String> _recents = [];
+  List<String> _filtered = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _focus.requestFocus();
+    _loadRecents();
+    _ctrl.addListener(_onTyping);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.removeListener(_onTyping);
+    _ctrl.dispose();
+    _focus.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadRecents() async {
+    final list = await _RecentSearches.load();
+    if (mounted) setState(() => _recents = list);
+  }
+
+  void _onTyping() {
+    final q = _ctrl.text.trim().toLowerCase();
+    setState(() {
+      _filtered = q.isEmpty
+          ? []
+          : _recents.where((r) => r.toLowerCase().contains(q)).toList();
+    });
+  }
+
+  void _submit(String query) {
+    final q = query.trim();
+    if (q.isEmpty) return;
+    Navigator.of(context).pop(q);
+  }
+
+  Future<void> _removeRecent(String query) async {
+    await _RecentSearches.remove(query);
+    _loadRecents();
+  }
+
+  Future<void> _clearAll() async {
+    await _RecentSearches.clear();
+    if (mounted) setState(() => _recents = []);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isTablet = MediaQuery.of(context).size.width >= 600;
+    final showSuggestions = _ctrl.text.isNotEmpty && _filtered.isNotEmpty;
+    final showRecents = _ctrl.text.isEmpty && _recents.isNotEmpty;
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Search input row
+            Padding(
+              padding: EdgeInsets.fromLTRB(8, isTablet ? 16 : 10, 16, 8),
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      size: 18,
+                    ),
+                    color: Colors.black87,
+                  ),
+                  Expanded(
+                    child: Container(
+                      height: isTablet ? 52 : 46,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF4F4F4),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: TextField(
+                        controller: _ctrl,
+                        focusNode: _focus,
+                        textInputAction: TextInputAction.search,
+                        onSubmitted: _submit,
+                        style: TextStyle(
+                          fontSize: isTablet ? 16 : 14,
+                          color: Colors.black87,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: 'Search products...',
+                          hintStyle: TextStyle(
+                            color: Colors.grey.shade400,
+                            fontSize: isTablet ? 15 : 13,
+                          ),
+                          prefixIcon: Icon(
+                            Icons.search,
+                            color: Colors.grey.shade400,
+                            size: isTablet ? 22 : 20,
+                          ),
+                          suffixIcon: _ctrl.text.isNotEmpty
+                              ? GestureDetector(
+                                  onTap: () => _ctrl.clear(),
+                                  child: Icon(
+                                    Icons.close_rounded,
+                                    color: Colors.grey.shade400,
+                                    size: isTablet ? 20 : 18,
+                                  ),
+                                )
+                              : null,
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.symmetric(
+                            vertical: isTablet ? 16 : 12,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () => _submit(_ctrl.text),
+                    child: Text(
+                      'Search',
+                      style: TextStyle(
+                        color: AppColors.primary,
+                        fontSize: isTablet ? 15 : 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const Divider(height: 1, color: Color(0xFFEEEEEE)),
+
+            // Suggestions
+            if (showSuggestions)
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  itemCount: _filtered.length,
+                  itemBuilder: (_, i) => _SuggestionTile(
+                    query: _filtered[i],
+                    icon: Icons.history_rounded,
+                    onTap: () => _submit(_filtered[i]),
+                    onFill: () {
+                      _ctrl.text = _filtered[i];
+                      _ctrl.selection = TextSelection.fromPosition(
+                        TextPosition(offset: _ctrl.text.length),
+                      );
+                    },
+                  ),
+                ),
+              )
+            // Recent searches
+            else if (showRecents)
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 16, 16, 8),
+                      child: Row(
+                        children: [
+                          Text(
+                            'Recent Searches',
+                            style: TextStyle(
+                              fontSize: isTablet ? 15 : 13,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black54,
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                          const Spacer(),
+                          GestureDetector(
+                            onTap: _clearAll,
+                            child: Text(
+                              'Clear all',
+                              style: TextStyle(
+                                fontSize: isTablet ? 14 : 12,
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: ListView.builder(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        itemCount: _recents.length,
+                        itemBuilder: (_, i) => _SuggestionTile(
+                          query: _recents[i],
+                          icon: Icons.history_rounded,
+                          onTap: () => _submit(_recents[i]),
+                          onFill: () {
+                            _ctrl.text = _recents[i];
+                            _ctrl.selection = TextSelection.fromPosition(
+                              TextPosition(offset: _ctrl.text.length),
+                            );
+                          },
+                          trailing: GestureDetector(
+                            onTap: () => _removeRecent(_recents[i]),
+                            child: const Icon(
+                              Icons.close_rounded,
+                              size: 16,
+                              color: Colors.black26,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            // Empty state
+            else if (_ctrl.text.isEmpty && _recents.isEmpty)
+              Expanded(
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.search_rounded,
+                        size: 52,
+                        color: Colors.grey.shade300,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Search for products',
+                        style: TextStyle(
+                          color: Colors.grey.shade400,
+                          fontSize: isTablet ? 16 : 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            // Typed but no matching recents
+            else
+              Expanded(
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.keyboard_return_rounded,
+                        size: 36,
+                        color: Colors.grey.shade300,
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        'Press search to find "${_ctrl.text}"',
+                        style: TextStyle(
+                          color: Colors.grey.shade400,
+                          fontSize: isTablet ? 15 : 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Suggestion Tile ──────────────────────────────────────────────────────────
+
+class _SuggestionTile extends StatelessWidget {
+  final String query;
+  final IconData icon;
+  final VoidCallback onTap;
+  final VoidCallback onFill;
+  final Widget? trailing;
+
+  const _SuggestionTile({
+    required this.query,
+    required this.icon,
+    required this.onTap,
+    required this.onFill,
+    this.trailing,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Icon(icon, size: 18, color: Colors.grey.shade400),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                query,
+                style: const TextStyle(fontSize: 14, color: Colors.black87),
+              ),
+            ),
+            // Arrow fills search bar with this query without submitting
+            if (trailing != null) ...[
+              const SizedBox(width: 8),
+              trailing!,
+              const SizedBox(width: 4),
+            ],
+            GestureDetector(
+              onTap: onFill,
+              child: Icon(
+                Icons.north_west_rounded,
+                size: 16,
+                color: Colors.grey.shade400,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Tappable Search Bar
+class _TappableSearchBar extends StatelessWidget {
+  final bool isTablet;
+  final String currentQuery;
+  final VoidCallback onTap;
+
+  const _TappableSearchBar({
     required this.isTablet,
-    required this.onChanged,
-    required this.onClear,
+    required this.currentQuery,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.fromLTRB(16, isTablet ? 20 : 14, 16, 12),
-      child: Container(
-        height: isTablet ? 52 : 46,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.07),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: TextField(
-          controller: controller,
-          onChanged: onChanged,
-          style: TextStyle(fontSize: isTablet ? 16 : 14),
-          decoration: InputDecoration(
-            hintText: 'Search products...',
-            hintStyle: TextStyle(
-              color: Colors.grey.shade400,
-              fontSize: isTablet ? 15 : 13,
-            ),
-            prefixIcon: Icon(
-              Icons.search,
-              color: Colors.grey.shade400,
-              size: isTablet ? 24 : 20,
-            ),
-            suffixIcon: controller.text.isNotEmpty
-                ? GestureDetector(
-                    onTap: onClear,
-                    child: Icon(
-                      Icons.close,
-                      color: Colors.grey.shade400,
-                      size: isTablet ? 20 : 18,
-                    ),
-                  )
-                : null,
-            border: InputBorder.none,
-            contentPadding: EdgeInsets.symmetric(vertical: isTablet ? 16 : 12),
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          height: isTablet ? 52 : 46,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.07),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Icon(
+                  Icons.search,
+                  color: Colors.grey.shade400,
+                  size: isTablet ? 24 : 20,
+                ),
+              ),
+              Expanded(
+                child: Text(
+                  currentQuery.isNotEmpty ? currentQuery : 'Search products...',
+                  style: TextStyle(
+                    color: currentQuery.isNotEmpty
+                        ? Colors.black87
+                        : Colors.grey.shade400,
+                    fontSize: isTablet ? 16 : 14,
+                  ),
+                ),
+              ),
+              if (currentQuery.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: Icon(
+                    Icons.close_rounded,
+                    size: 18,
+                    color: Colors.grey.shade400,
+                  ),
+                ),
+            ],
           ),
         ),
       ),
@@ -298,6 +668,7 @@ class _PlainSearchBar extends StatelessWidget {
   }
 }
 
+// Product Mode Header
 class _ProductModeHeader extends StatelessWidget {
   final String title;
   final bool isTablet;
@@ -340,77 +711,71 @@ class _ProductModeHeader extends StatelessWidget {
 // Search Bar and Filter Button
 
 class _SearchBarWithFilter extends StatelessWidget {
-  final TextEditingController controller;
   final bool isTablet;
+  final String currentQuery;
   final bool hasActiveFilter;
-  final ValueChanged<String> onChanged;
-  final VoidCallback onClear;
+  final VoidCallback onTap;
   final VoidCallback onFilterTap;
 
   const _SearchBarWithFilter({
-    required this.controller,
     required this.isTablet,
+    required this.currentQuery,
     required this.hasActiveFilter,
-    required this.onChanged,
-    required this.onClear,
+    required this.onTap,
     required this.onFilterTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.fromLTRB(16, 10, 16, 10),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
       child: Row(
         children: [
           Expanded(
-            child: Container(
-              height: isTablet ? 52 : 46,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.07),
-                    blurRadius: 10,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: TextField(
-                controller: controller,
-                onChanged: onChanged,
-                style: TextStyle(fontSize: isTablet ? 16 : 14),
-                decoration: InputDecoration(
-                  hintText: 'Search products...',
-                  hintStyle: TextStyle(
-                    color: Colors.grey.shade400,
-                    fontSize: isTablet ? 15 : 13,
-                  ),
-                  prefixIcon: Icon(
-                    Icons.search,
-                    color: Colors.grey.shade400,
-                    size: isTablet ? 24 : 20,
-                  ),
-                  suffixIcon: controller.text.isNotEmpty
-                      ? GestureDetector(
-                          onTap: onClear,
-                          child: Icon(
-                            Icons.close,
-                            color: Colors.grey.shade400,
-                            size: isTablet ? 20 : 18,
-                          ),
-                        )
-                      : null,
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(
-                    vertical: isTablet ? 16 : 12,
-                  ),
+            child: GestureDetector(
+              onTap: onTap,
+              child: Container(
+                height: isTablet ? 52 : 46,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.07),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: Icon(
+                        Icons.search,
+                        color: Colors.grey.shade400,
+                        size: isTablet ? 22 : 20,
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        currentQuery.isNotEmpty
+                            ? currentQuery
+                            : 'Search products...',
+                        style: TextStyle(
+                          color: currentQuery.isNotEmpty
+                              ? Colors.black87
+                              : Colors.grey.shade400,
+                          fontSize: isTablet ? 15 : 13,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
           ),
           const SizedBox(width: 10),
-          // Filter button
           GestureDetector(
             onTap: onFilterTap,
             child: Container(
@@ -520,7 +885,7 @@ class _CategoryView extends ConsumerWidget {
   }
 }
 
-// Product List
+// ─── Product List ─────────────────────────────────────────────────────────────
 
 class _ProductList extends StatelessWidget {
   final List<ProductEntity> products;
@@ -595,17 +960,11 @@ class _ErrorView extends StatelessWidget {
   }
 }
 
-// Filter Sheet
+// ─── Filter Sheet ─────────────────────────────────────────────────────────────
+
 class _FilterSheet extends ConsumerStatefulWidget {
   final String storeId;
-  final List<ProductEntity> storeProducts;
-  final CategoryEntity? selectedCategory;
-
-  const _FilterSheet({
-    required this.storeId,
-    required this.storeProducts,
-    this.selectedCategory,
-  });
+  const _FilterSheet({required this.storeId});
 
   @override
   ConsumerState<_FilterSheet> createState() => _FilterSheetState();
@@ -626,17 +985,7 @@ class _FilterSheetState extends ConsumerState<_FilterSheet> {
     final productState = ref.read(productViewModelProvider);
     _filter = productState.filter;
 
-    // Scope to current category's products only
-    _snapshot = List.unmodifiable(
-      widget.selectedCategory != null
-          ? widget.storeProducts
-                .where(
-                  (p) => p.categoryId == widget.selectedCategory!.categoryId,
-                )
-                .toList()
-          : widget.storeProducts,
-    );
-
+    _snapshot = List.unmodifiable(productState.products);
     _subcategories = _buildSubcategories(_snapshot);
 
     if (_snapshot.isEmpty) {
@@ -735,7 +1084,6 @@ class _FilterSheetState extends ConsumerState<_FilterSheet> {
                 controller: scrollCtrl,
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
                 children: [
-                  // Sort
                   const _FilterSectionTitle(title: 'Sort By'),
                   const SizedBox(height: 10),
                   Wrap(
@@ -804,20 +1152,27 @@ class _FilterSheetState extends ConsumerState<_FilterSheet> {
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 24),
-
-                  // Price range
                   const _FilterSectionTitle(title: 'Price Range'),
                   const SizedBox(height: 4),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('NPR ${_priceRange.start.toInt()}'),
+                      Text(
+                        'NPR \${_priceRange.start.toInt()}',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
                       Text(
                         _priceRange.end >= _maxBound
-                            ? 'NPR ${_maxBound.toInt()}+'
-                            : 'NPR ${_priceRange.end.toInt()}',
+                            ? 'NPR \${_maxBound.toInt()}+'
+                            : 'NPR \${_priceRange.end.toInt()}',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey.shade600,
+                        ),
                       ),
                     ],
                   ),
@@ -838,8 +1193,6 @@ class _FilterSheetState extends ConsumerState<_FilterSheet> {
                       );
                     }),
                   ),
-
-                  // Subcategories
                   if (_subcategories.isNotEmpty) ...[
                     const SizedBox(height: 24),
                     const _FilterSectionTitle(title: 'Subcategory'),
@@ -872,7 +1225,6 @@ class _FilterSheetState extends ConsumerState<_FilterSheet> {
                       ],
                     ),
                   ],
-
                   const SizedBox(height: 32),
                 ],
               ),

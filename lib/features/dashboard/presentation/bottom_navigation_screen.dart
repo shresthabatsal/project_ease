@@ -7,7 +7,7 @@ import 'package:project_ease/core/services/websocket/socket_service.dart';
 import 'package:project_ease/core/utils/app_fonts.dart';
 import 'package:project_ease/core/utils/proximity_service.dart';
 import 'package:project_ease/core/utils/shake_detector.dart';
-import 'package:project_ease/features/cart/presentation/state/cart_state.dart';
+import 'package:project_ease/features/cart/presentation/view_model/cart_view_model.dart';
 import 'package:project_ease/features/dashboard/presentation/bottom_navigation_screens/account_screen.dart';
 import 'package:project_ease/features/dashboard/presentation/bottom_navigation_screens/cart_screen.dart';
 import 'package:project_ease/features/dashboard/presentation/bottom_navigation_screens/home_screen.dart';
@@ -18,7 +18,7 @@ import 'package:project_ease/features/notification/data/models/notification_api_
 import 'package:project_ease/features/notification/presentation/view_model/notification_view_model.dart';
 import 'package:project_ease/features/order/presentation/view_model/order_view_model.dart';
 import 'package:project_ease/features/support/data/models/message_api_model.dart';
-import 'package:project_ease/features/support/presentation/view_model/support_view_model.dart';
+import 'package:project_ease/features/support/presentation/view_model/chat_view_model.dart';
 
 class BottomNavigationScreen extends ConsumerStatefulWidget {
   const BottomNavigationScreen({super.key});
@@ -50,6 +50,7 @@ class _BottomNavigationScreenState
     Future.microtask(() {
       if (ref.read(appSettingsProvider).shakeEnabled) _shakeDetector.start();
 
+      // Proximity is always active — no setting toggle needed
       _proximityService.start();
 
       ref.read(orderViewModelProvider.notifier).loadOrders();
@@ -114,7 +115,7 @@ class _BottomNavigationScreenState
     } catch (_) {}
   }
 
-  // Shake handler
+  // ── Shake handler ─────────────────────────────────────────────────────────
 
   Future<void> _onShake() async {
     if (!mounted) return;
@@ -176,7 +177,14 @@ class _BottomNavigationScreenState
         Scaffold(
           body: IndexedStack(index: _selectedIndex, children: screens),
           bottomNavigationBar: BottomNavigationBar(
-            iconSize: isTablet ? 42 : 30,
+            iconSize: isTablet ? 26 : 24,
+            selectedFontSize: isTablet ? 13 : 11,
+            unselectedFontSize: isTablet ? 12 : 10,
+            selectedItemColor: AppColors.primary,
+            unselectedItemColor: Colors.grey,
+            type: BottomNavigationBarType.fixed,
+            elevation: 12,
+            backgroundColor: Colors.white,
             items: [
               const BottomNavigationBarItem(
                 icon: Icon(Icons.home_rounded),

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:project_ease/apps/theme/app_colors.dart';
@@ -23,14 +24,37 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  final PageController _pageController = PageController();
+  static const _kInitialPage = 10000;
+  late final PageController _pageController = PageController(
+    initialPage: _kInitialPage,
+  );
   int _currentPage = 0;
+  Timer? _adTimer;
 
   final List<String> adImages = [
     'assets/images/ad.png',
     'assets/images/ad.png',
     'assets/images/ad.png',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _adTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      if (!mounted || !_pageController.hasClients) return;
+      _pageController.nextPage(
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _adTimer?.cancel();
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -125,7 +149,49 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  // Categories
+  Widget _buildAdSlider(bool isTablet) {
+    final images = isTablet
+        ? List.filled(3, 'assets/images/tab_ad.png')
+        : adImages;
+    return SizedBox(
+      height: isTablet ? 240 : 160,
+      child: PageView.builder(
+        controller: _pageController,
+        // No itemCount → infinite pages
+        onPageChanged: (i) => setState(() => _currentPage = i % images.length),
+        itemBuilder: (_, i) => Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.asset(
+              images[i % images.length],
+              fit: BoxFit.cover,
+              width: double.infinity,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDotsIndicator(bool isTablet) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(
+        adImages.length,
+        (i) => AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          width: _currentPage == i ? (isTablet ? 12 : 8) : (isTablet ? 8 : 6),
+          height: _currentPage == i ? (isTablet ? 12 : 8) : (isTablet ? 8 : 6),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: _currentPage == i ? AppColors.primary : Colors.grey.shade300,
+          ),
+        ),
+      ),
+    );
+  }
 
   Widget _buildCategories(
     BuildContext context,
@@ -175,8 +241,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  // Products
-
   Widget _buildProducts(bool isTablet, ProductState productState) {
     if (productState.status == ProductStatus.loading &&
         productState.storeProducts.isEmpty) {
@@ -220,54 +284,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
     );
   }
-
-  Widget _buildAdSlider(bool isTablet) {
-    final images = isTablet
-        ? List.filled(3, 'assets/images/tab_ad.png')
-        : adImages;
-    return SizedBox(
-      height: isTablet ? 240 : 160,
-      child: PageView.builder(
-        controller: _pageController,
-        itemCount: images.length,
-        onPageChanged: (i) => setState(() => _currentPage = i),
-        itemBuilder: (_, i) => Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Image.asset(
-              images[i],
-              fit: BoxFit.cover,
-              width: double.infinity,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDotsIndicator(bool isTablet) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(
-        adImages.length,
-        (i) => AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          margin: const EdgeInsets.symmetric(horizontal: 4),
-          width: _currentPage == i ? (isTablet ? 12 : 8) : (isTablet ? 8 : 6),
-          height: _currentPage == i ? (isTablet ? 12 : 8) : (isTablet ? 8 : 6),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: _currentPage == i ? AppColors.primary : Colors.grey.shade300,
-          ),
-        ),
-      ),
-    );
-  }
 }
 
-// ─── Section Header ───────────────────────────────────────────────────────────
-
+// Section Header
 class _SectionHeader extends StatelessWidget {
   final String title;
   final bool isTablet;
@@ -376,7 +395,7 @@ class _CategoryChip extends StatelessWidget {
   }
 }
 
-// Home Product Card
+// ─── Home Product Card ────────────────────────────────────────────────────────
 
 class _HomeProductCard extends StatelessWidget {
   final ProductEntity product;
@@ -476,7 +495,7 @@ class _HomeProductCard extends StatelessWidget {
   }
 }
 
-// Notification Bell
+// ─── Notification Bell ────────────────────────────────────────────────────────
 
 class _NotificationBell extends ConsumerWidget {
   final bool isTablet;

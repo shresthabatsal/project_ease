@@ -18,7 +18,7 @@ class CategoryApiModel {
     return CategoryApiModel(
       id: json['_id'] ?? '',
       name: json['name'] ?? '',
-      image: json['image'],
+      image: json['categoryImage'],
       description: json['description'],
     );
   }

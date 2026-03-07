@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:project_ease/features/cart/presentation/state/cart_state.dart';
+import 'package:project_ease/features/cart/presentation/view_model/cart_view_model.dart';
 import 'package:project_ease/features/order/data/repositories/order_repository.dart';
 import 'package:project_ease/features/order/domain/entities/order_entity.dart';
 import 'package:project_ease/features/order/domain/repositories/order_repository.dart';
