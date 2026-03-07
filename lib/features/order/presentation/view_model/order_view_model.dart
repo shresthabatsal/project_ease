@@ -1,8 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:project_ease/features/cart/presentation/view_model/cart_view_model.dart';
-import 'package:project_ease/features/order/data/repositories/order_repository.dart';
 import 'package:project_ease/features/order/domain/entities/order_entity.dart';
-import 'package:project_ease/features/order/domain/repositories/order_repository.dart';
+import 'package:project_ease/features/order/domain/usecases/buy_now_usecase.dart';
+import 'package:project_ease/features/order/domain/usecases/cancel_order_usecase.dart';
+import 'package:project_ease/features/order/domain/usecases/create_order_usecase.dart';
+import 'package:project_ease/features/order/domain/usecases/get_orders_usecasse.dart';
+import 'package:project_ease/features/order/domain/usecases/get_users_order_usecase.dart';
+import 'package:project_ease/features/order/domain/usecases/submit_receipt_usecase.dart';
 import 'package:project_ease/features/order/presentation/state/order_state.dart';
 
 final orderViewModelProvider = NotifierProvider<OrderViewModel, OrderState>(
@@ -10,11 +14,21 @@ final orderViewModelProvider = NotifierProvider<OrderViewModel, OrderState>(
 );
 
 class OrderViewModel extends Notifier<OrderState> {
-  late final IOrderRepository _repo;
+  late final CreateOrderUsecase _createOrder;
+  late final BuyNowUsecase _buyNow;
+  late final GetUserOrdersUsecase _getUserOrders;
+  late final GetOrderUsecase _getOrder;
+  late final CancelOrderUsecase _cancelOrder;
+  late final SubmitReceiptUsecase _submitReceipt;
 
   @override
   OrderState build() {
-    _repo = ref.read(orderRepositoryProvider);
+    _createOrder = ref.read(createOrderUsecaseProvider);
+    _buyNow = ref.read(buyNowUsecaseProvider);
+    _getUserOrders = ref.read(getUserOrdersUsecaseProvider);
+    _getOrder = ref.read(getOrderUsecaseProvider);
+    _cancelOrder = ref.read(cancelOrderUsecaseProvider);
+    _submitReceipt = ref.read(submitReceiptUsecaseProvider);
     return const OrderState();
   }
 
@@ -26,22 +40,23 @@ class OrderViewModel extends Notifier<OrderState> {
     String? notes,
   }) async {
     state = state.copyWith(status: OrderStatus.loading);
-    final result = await _repo.createOrder(
-      storeId: storeId,
-      pickupDate: pickupDate,
-      pickupTime: pickupTime,
-      notes: notes,
+    final result = await _createOrder(
+      CreateOrderParams(
+        storeId: storeId,
+        pickupDate: pickupDate,
+        pickupTime: pickupTime,
+        notes: notes,
+      ),
     );
     return result.fold(
-      (failure) {
+      (f) {
         state = state.copyWith(
           status: OrderStatus.error,
-          errorMessage: failure.message,
+          errorMessage: f.message,
         );
         return false;
       },
       (order) {
-        // Clear cart on successful order
         ref.read(cartViewModelProvider.notifier).syncAfterOrder();
         state = state.copyWith(
           status: OrderStatus.success,
@@ -62,19 +77,21 @@ class OrderViewModel extends Notifier<OrderState> {
     String? notes,
   }) async {
     state = state.copyWith(status: OrderStatus.loading);
-    final result = await _repo.buyNow(
-      productId: productId,
-      quantity: quantity,
-      storeId: storeId,
-      pickupDate: pickupDate,
-      pickupTime: pickupTime,
-      notes: notes,
+    final result = await _buyNow(
+      BuyNowParams(
+        productId: productId,
+        quantity: quantity,
+        storeId: storeId,
+        pickupDate: pickupDate,
+        pickupTime: pickupTime,
+        notes: notes,
+      ),
     );
     return result.fold(
-      (failure) {
+      (f) {
         state = state.copyWith(
           status: OrderStatus.error,
-          errorMessage: failure.message,
+          errorMessage: f.message,
         );
         return false;
       },
@@ -90,7 +107,7 @@ class OrderViewModel extends Notifier<OrderState> {
 
   Future<void> loadOrders() async {
     state = state.copyWith(status: OrderStatus.loading);
-    final result = await _repo.getUserOrders();
+    final result = await _getUserOrders();
     result.fold(
       (f) => state = state.copyWith(
         status: OrderStatus.error,
@@ -108,11 +125,13 @@ class OrderViewModel extends Notifier<OrderState> {
     String? notes,
   }) async {
     state = state.copyWith(status: OrderStatus.loading);
-    final result = await _repo.submitReceipt(
-      orderId: orderId,
-      receiptImagePath: receiptImagePath,
-      paymentMethod: paymentMethod,
-      notes: notes,
+    final result = await _submitReceipt(
+      SubmitReceiptParams(
+        orderId: orderId,
+        receiptImagePath: receiptImagePath,
+        paymentMethod: paymentMethod,
+        notes: notes,
+      ),
     );
     return result.fold(
       (f) {
@@ -131,7 +150,7 @@ class OrderViewModel extends Notifier<OrderState> {
 
   // Fetch a single order by ID
   Future<OrderEntity?> fetchOrder(String orderId) async {
-    final result = await _repo.getOrder(orderId);
+    final result = await _getOrder(orderId);
     return result.fold(
       (f) {
         state = state.copyWith(
@@ -150,7 +169,9 @@ class OrderViewModel extends Notifier<OrderState> {
   // Cancel order
   Future<bool> cancelOrder(String orderId, String? reason) async {
     state = state.copyWith(status: OrderStatus.loading);
-    final result = await _repo.cancelOrder(orderId, reason);
+    final result = await _cancelOrder(
+      CancelOrderParams(orderId: orderId, reason: reason),
+    );
     return result.fold(
       (f) {
         state = state.copyWith(
@@ -160,7 +181,6 @@ class OrderViewModel extends Notifier<OrderState> {
         return false;
       },
       (order) {
-        // Refresh the list
         final updated = state.orders
             .map((o) => o.orderId == orderId ? order : o)
             .toList();

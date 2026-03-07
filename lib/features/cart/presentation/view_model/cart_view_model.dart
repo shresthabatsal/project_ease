@@ -1,7 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:project_ease/features/cart/data/repositories/cart_repository.dart';
 import 'package:project_ease/features/cart/domain/entities/cart_entity.dart';
-import 'package:project_ease/features/cart/domain/repositories/cart_repository.dart';
+import 'package:project_ease/features/cart/domain/usecases/add_to_cart_usecase.dart';
+import 'package:project_ease/features/cart/domain/usecases/clear_cart_usecase.dart';
+import 'package:project_ease/features/cart/domain/usecases/get_cart_usecase.dart';
+import 'package:project_ease/features/cart/domain/usecases/remove_cart_item_usecase.dart';
+import 'package:project_ease/features/cart/domain/usecases/update_cart_usecase.dart';
 import 'package:project_ease/features/cart/presentation/state/cart_state.dart';
 import 'package:project_ease/features/product/domain/entities/product_entity.dart';
 
@@ -10,18 +13,26 @@ final cartViewModelProvider = NotifierProvider<CartViewModel, CartState>(
 );
 
 class CartViewModel extends Notifier<CartState> {
-  late final ICartRepository _repo;
+  late final GetCartUsecase _getCart;
+  late final AddToCartUsecase _addToCart;
+  late final UpdateCartItemUsecase _updateCartItem;
+  late final RemoveCartItemUsecase _removeCartItem;
+  late final ClearCartUsecase _clearCart;
 
   @override
   CartState build() {
-    _repo = ref.read(cartRepositoryProvider);
+    _getCart = ref.read(getCartUsecaseProvider);
+    _addToCart = ref.read(addToCartUsecaseProvider);
+    _updateCartItem = ref.read(updateCartItemUsecaseProvider);
+    _removeCartItem = ref.read(removeCartItemUsecaseProvider);
+    _clearCart = ref.read(clearCartUsecaseProvider);
     Future.microtask(loadCart);
     return const CartState();
   }
 
   Future<void> loadCart() async {
     state = state.copyWith(status: CartStatus.loading);
-    final result = await _repo.getCart();
+    final result = await _getCart();
     result.fold(
       (f) => state = state.copyWith(
         status: CartStatus.error,
@@ -37,11 +48,9 @@ class CartViewModel extends Notifier<CartState> {
     final before = state.items;
     _optimisticAdd(product, quantity);
 
-    final result = await _repo.addToCart(
-      productId: product.productId,
-      quantity: quantity,
+    final result = await _addToCart(
+      AddToCartParams(productId: product.productId, quantity: quantity),
     );
-
     return result.fold(
       (f) {
         state = state.copyWith(items: before);
@@ -82,57 +91,42 @@ class CartViewModel extends Notifier<CartState> {
       await removeItem(cartItemId);
       return;
     }
-
     final before = state.items;
-    // Optimistic update
     state = state.copyWith(
       items: state.items.map((i) {
         if (i.cartItemId == cartItemId) return i.copyWith(quantity: quantity);
         return i;
       }).toList(),
     );
-
-    final result = await _repo.updateCartItem(
-      cartItemId: cartItemId,
-      quantity: quantity,
+    final result = await _updateCartItem(
+      UpdateCartItemParams(cartItemId: cartItemId, quantity: quantity),
     );
-    result.fold(
-      (f) => state = state.copyWith(items: before), // rollback
-      (updated) {
-        state = state.copyWith(
-          items: state.items.map((i) {
-            if (i.cartItemId == cartItemId) return updated;
-            return i;
-          }).toList(),
-        );
-      },
-    );
+    result.fold((f) => state = state.copyWith(items: before), (updated) {
+      state = state.copyWith(
+        items: state.items.map((i) {
+          if (i.cartItemId == cartItemId) return updated;
+          return i;
+        }).toList(),
+      );
+    });
   }
 
   // Remove
-
   Future<void> removeItem(String cartItemId) async {
     final before = state.items;
     state = state.copyWith(
       items: state.items.where((i) => i.cartItemId != cartItemId).toList(),
     );
-
-    final result = await _repo.removeFromCart(cartItemId);
-    result.fold(
-      (f) => state = state.copyWith(items: before), // rollback
-      (_) {},
-    );
+    final result = await _removeCartItem(cartItemId);
+    result.fold((f) => state = state.copyWith(items: before), (_) {});
   }
 
   // Clear
   Future<void> clear() async {
     final before = state.items;
     state = state.copyWith(items: []);
-    final result = await _repo.clearCart();
-    result.fold(
-      (f) => state = state.copyWith(items: before), // rollback
-      (_) {},
-    );
+    final result = await _clearCart();
+    result.fold((f) => state = state.copyWith(items: before), (_) {});
   }
 
   // Sync after order

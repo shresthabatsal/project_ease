@@ -1,0 +1,19 @@
+import 'package:dartz/dartz.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:project_ease/core/error/failures.dart';
+import 'package:project_ease/core/usecases/app_usecase.dart';
+import 'package:project_ease/features/cart/data/repositories/cart_repository.dart';
+import 'package:project_ease/features/cart/domain/entities/cart_entity.dart';
+import 'package:project_ease/features/cart/domain/repositories/cart_repository.dart';
+
+final getCartUsecaseProvider = Provider<GetCartUsecase>(
+  (ref) => GetCartUsecase(ref.read(cartRepositoryProvider)),
+);
+
+class GetCartUsecase implements UsecaseWithoutParams<List<CartItemEntity>> {
+  final ICartRepository _repo;
+  GetCartUsecase(this._repo);
+
+  @override
+  Future<Either<Failure, List<CartItemEntity>>> call() => _repo.getCart();
+}

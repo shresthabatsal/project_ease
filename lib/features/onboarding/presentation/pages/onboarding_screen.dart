@@ -1,17 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:project_ease/apps/routes/app_routes.dart';
 import 'package:project_ease/apps/theme/app_colors.dart';
-import 'package:project_ease/features/auth/presentation/pages/login_screen.dart';
 import 'package:project_ease/core/utils/app_fonts.dart';
+import 'package:project_ease/features/auth/presentation/pages/login_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class OnboardingScreen extends StatefulWidget {
+const _kHasSeenOnboarding = 'has_seen_onboarding';
+Future<bool> isFirstLaunch() async {
+  final prefs = await SharedPreferences.getInstance();
+  return !(prefs.getBool(_kHasSeenOnboarding) ?? false);
+}
+
+Future<void> markOnboardingSeen() async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setBool(_kHasSeenOnboarding, true);
+}
+
+class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 
   @override
-  State<OnboardingScreen> createState() => _OnboardingScreenState();
+  ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
-class _OnboardingScreenState extends State<OnboardingScreen> {
+class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
@@ -37,9 +50,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   ];
 
   void _onPageChanged(int index) {
-    setState(() {
-      _currentPage = index;
-    });
+    setState(() => _currentPage = index);
+  }
+
+  Future<void> _finish() async {
+    await markOnboardingSeen();
+    if (!mounted) return;
+    AppRoutes.pushReplacement(context, const LoginScreen());
   }
 
   void _nextPage() {
@@ -49,12 +66,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         curve: Curves.easeInOut,
       );
     } else {
-      AppRoutes.pushReplacement(context, const LoginScreen());
+      _finish();
     }
-  }
-
-  void _skip() {
-    AppRoutes.pushReplacement(context, const LoginScreen());
   }
 
   @override
@@ -73,7 +86,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 onPageChanged: _onPageChanged,
                 itemBuilder: (context, index) {
                   final slide = _slides[index];
-
                   return LayoutBuilder(
                     builder: (context, constraints) {
                       double imageHeight = constraints.maxHeight * 0.45;
@@ -91,12 +103,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               ),
                               textAlign: TextAlign.center,
                             ),
-                            const SizedBox(height: 8),
-                            const SizedBox(height: 8),
-
-                            const SizedBox(height: 8),
-
-                            // Subtitle
+                            const SizedBox(height: 16),
                             Text(
                               slide['subtitle']!,
                               style: TextStyle(
@@ -123,23 +130,25 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
             ),
 
-            // Bottom Navigation
+            // Bottom navigation
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Skip Button
+                  // Skip
                   TextButton(
-                    onPressed: _skip,
+                    onPressed: _finish,
                     child: Text(
                       "Skip",
-                      style: TextStyle(color: Colors.grey.shade600,
-                      fontSize: AppFonts.bodyLarge,),
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: AppFonts.bodyLarge,
+                      ),
                     ),
                   ),
 
-                  // Indicators
+                  // Dots
                   Row(
                     children: List.generate(_slides.length, (index) {
                       return Container(
@@ -156,7 +165,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     }),
                   ),
 
-                  // Next Button
+                  // Next / Done
                   TextButton(
                     onPressed: _nextPage,
                     child: Text(
