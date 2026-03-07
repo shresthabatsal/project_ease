@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:project_ease/apps/theme/app_colors.dart';
 import 'package:project_ease/core/api/api_endpoints.dart';
 import 'package:project_ease/features/cart/domain/entities/cart_entity.dart';
-import 'package:project_ease/features/cart/presentation/state/cart_state.dart';
+import 'package:project_ease/features/cart/presentation/view_model/cart_view_model.dart';
 import 'package:project_ease/features/dashboard/presentation/checkout_screen.dart';
 import 'package:project_ease/features/product/domain/entities/product_entity.dart';
 import 'package:project_ease/features/rating/presentation/widgets/rating_section.dart';

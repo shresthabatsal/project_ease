@@ -5,15 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:project_ease/apps/theme/app_colors.dart';
+import 'package:project_ease/core/utils/snackbar_utils.dart';
 import 'package:project_ease/core/utils/app_fonts.dart';
 import 'package:project_ease/features/store/domain/entities/store_entity.dart';
 import 'package:project_ease/features/store/presentation/view_model/store_view_model.dart';
 
-/// Full-screen map that shows all store locations.
-/// The user can tap a pin to see store details and select it.
-/// A "Find nearest" button locates the user and highlights the closest store.
-///
-/// Pops with the selected [StoreEntity] when the user taps "Select this store".
 class StoreMapScreen extends ConsumerStatefulWidget {
   const StoreMapScreen({super.key});
 
@@ -46,7 +42,7 @@ class _StoreMapScreenState extends ConsumerState<StoreMapScreen> {
     try {
       bool svc = await Geolocator.isLocationServiceEnabled();
       if (!svc) {
-        _snack('Location services are disabled');
+        SnackbarUtils.showWarning(context, 'Location services are disabled');
         return;
       }
 
@@ -56,7 +52,7 @@ class _StoreMapScreenState extends ConsumerState<StoreMapScreen> {
       }
       if (perm == LocationPermission.denied ||
           perm == LocationPermission.deniedForever) {
-        _snack('Location permission denied');
+        SnackbarUtils.showWarning(context, 'Location permission denied');
         return;
       }
 
@@ -77,18 +73,13 @@ class _StoreMapScreenState extends ConsumerState<StoreMapScreen> {
         setState(() => _focused = nearest.first);
       } else {
         _mapController.move(here, 13);
-        _snack('No stores found nearby');
+        SnackbarUtils.showInfo(context, 'No stores found nearby');
       }
     } catch (e) {
-      _snack('Could not get location');
+      SnackbarUtils.showError(context, 'Could not get location');
     } finally {
       setState(() => _locating = false);
     }
-  }
-
-  void _snack(String msg) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
   void _onPinTap(StoreEntity store) {
@@ -107,7 +98,7 @@ class _StoreMapScreenState extends ConsumerState<StoreMapScreen> {
     final storeState = ref.watch(storeViewModelProvider);
     final isTablet = MediaQuery.of(context).size.width >= 600;
 
-    // Combine all stores (nearest may have distance info)
+    // Combine all stores
     final nearest = storeState.nearestStores;
     final nearestIds = nearest.map((s) => s.storeId).toSet();
     final allStores = [
@@ -118,7 +109,7 @@ class _StoreMapScreenState extends ConsumerState<StoreMapScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          // ── Map ──────────────────────────────────────────────────────────
+          // Map
           FlutterMap(
             mapController: _mapController,
             options: MapOptions(
@@ -182,7 +173,7 @@ class _StoreMapScreenState extends ConsumerState<StoreMapScreen> {
             ],
           ),
 
-          // ── Top bar ───────────────────────────────────────────────────────
+          // Top bar
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
@@ -224,7 +215,7 @@ class _StoreMapScreenState extends ConsumerState<StoreMapScreen> {
             ),
           ),
 
-          // ── Find nearest button ───────────────────────────────────────────
+          // Find nearest button
           Positioned(
             right: 12,
             bottom: _focused != null ? 220 : 100,
@@ -259,10 +250,7 @@ class _StoreMapScreenState extends ConsumerState<StoreMapScreen> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 // Store detail card
-// ─────────────────────────────────────────────────────────────────────────────
-
 class _StoreCard extends StatelessWidget {
   final StoreEntity store;
   final bool isNearest;
@@ -447,10 +435,7 @@ class _StoreCard extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 // Store pin marker
-// ─────────────────────────────────────────────────────────────────────────────
-
 class _StoreMarker extends StatelessWidget {
   final bool isFocused;
   final bool isNearest;
@@ -515,10 +500,7 @@ class _PinTailPainter extends CustomPainter {
   bool shouldRepaint(_) => false;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 // Reusable map icon button
-// ─────────────────────────────────────────────────────────────────────────────
-
 class _MapButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback? onTap;

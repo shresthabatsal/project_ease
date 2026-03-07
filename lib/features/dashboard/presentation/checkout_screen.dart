@@ -233,7 +233,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                     ),
                   )
                 : Text(
-                    'Place Order — NPR ${widget.total.toStringAsFixed(0)}',
+                    'Place Order - NPR ${widget.total.toStringAsFixed(0)}',
                     style: TextStyle(
                       fontSize: isTablet ? 16 : 15,
                       fontWeight: FontWeight.w700,

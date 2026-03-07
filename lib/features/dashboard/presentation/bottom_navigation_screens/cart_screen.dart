@@ -4,14 +4,24 @@ import 'package:project_ease/apps/theme/app_colors.dart';
 import 'package:project_ease/core/api/api_endpoints.dart';
 import 'package:project_ease/features/cart/domain/entities/cart_entity.dart';
 import 'package:project_ease/features/cart/presentation/state/cart_state.dart';
+import 'package:project_ease/features/cart/presentation/view_model/cart_view_model.dart';
 import 'package:project_ease/features/dashboard/presentation/checkout_screen.dart';
 import 'package:project_ease/features/store/presentation/view_model/store_view_model.dart';
 
-class CartScreen extends ConsumerWidget {
+class CartScreen extends ConsumerStatefulWidget {
   const CartScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<CartScreen> createState() => _CartScreenState();
+}
+
+class _CartScreenState extends ConsumerState<CartScreen> {
+  Future<void> _onRefresh() async {
+    await ref.read(cartViewModelProvider.notifier).loadCart();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final cartState = ref.watch(cartViewModelProvider);
     final isTablet = MediaQuery.of(context).size.width >= 600;
     final storeState = ref.watch(storeViewModelProvider);
@@ -46,16 +56,31 @@ class CartScreen extends ConsumerWidget {
       body: cartState.status == CartStatus.loading && cartState.isEmpty
           ? const Center(child: CircularProgressIndicator())
           : cartState.isEmpty
-          ? _EmptyCart(isTablet: isTablet)
+          ? RefreshIndicator(
+              onRefresh: _onRefresh,
+              color: AppColors.primary,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.6,
+                  child: _EmptyCart(isTablet: isTablet),
+                ),
+              ),
+            )
           : Column(
               children: [
                 Expanded(
-                  child: ListView.builder(
-                    padding: const EdgeInsets.only(top: 8, bottom: 16),
-                    itemCount: cartState.items.length,
-                    itemBuilder: (_, i) => _CartItemTile(
-                      item: cartState.items[i],
-                      isTablet: isTablet,
+                  child: RefreshIndicator(
+                    onRefresh: _onRefresh,
+                    color: AppColors.primary,
+                    child: ListView.builder(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.only(top: 8, bottom: 16),
+                      itemCount: cartState.items.length,
+                      itemBuilder: (_, i) => _CartItemTile(
+                        item: cartState.items[i],
+                        isTablet: isTablet,
+                      ),
                     ),
                   ),
                 ),

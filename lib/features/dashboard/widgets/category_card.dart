@@ -21,6 +21,9 @@ class CategoryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cardHeight = isTablet ? 100.0 : 80.0;
     final imageSize = isTablet ? 70.0 : 56.0;
+    final imageUrl = '${ApiEndpoints.mediaServerUrl}${category.image}';
+
+    print('Category Image URL: $imageUrl');
 
     return GestureDetector(
       onTap: onTap,

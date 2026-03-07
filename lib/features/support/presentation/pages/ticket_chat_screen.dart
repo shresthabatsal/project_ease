@@ -6,8 +6,9 @@ import 'package:project_ease/core/utils/snackbar_utils.dart';
 import 'package:project_ease/features/support/data/models/message_api_model.dart';
 import 'package:project_ease/features/support/domain/entities/message_entity.dart';
 import 'package:project_ease/features/support/domain/entities/ticket_entity.dart';
+import 'package:project_ease/features/support/presentation/state/chat_state.dart';
 import 'package:project_ease/features/support/presentation/state/support_state.dart';
-import 'package:project_ease/features/support/presentation/view_model/support_view_model.dart';
+import 'package:project_ease/features/support/presentation/view_model/chat_view_model.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 class TicketChatScreen extends ConsumerStatefulWidget {
@@ -22,37 +23,35 @@ class _TicketChatScreenState extends ConsumerState<TicketChatScreen> {
   final _msgCtrl = TextEditingController();
   final _scrollCtrl = ScrollController();
 
+  late final SocketService _socket;
+  late final ChatViewModel _chatNotifier;
+
   @override
   void initState() {
     super.initState();
+    _socket = ref.read(socketServiceProvider);
+    _chatNotifier = ref.read(chatViewModelProvider.notifier);
+
     Future.microtask(() {
-      ref.read(chatViewModelProvider.notifier).loadChat(widget.ticket);
+      _chatNotifier.loadChat(widget.ticket);
 
-      final socket = ref.read(socketServiceProvider);
-
-      // Register callback directly on socket so admin replies are received
-      // even if the socket was already connected before this screen mounted.
-      socket.setTicketMessageCallback((payload) {
+      _socket.setTicketMessageCallback((payload) {
         if (!mounted) return;
         try {
           final model = MessageApiModel.fromJson(payload);
-          ref
-              .read(chatViewModelProvider.notifier)
-              .addRealtimeMessage(model.toEntity());
+          _chatNotifier.addRealtimeMessage(model.toEntity());
         } catch (_) {}
       });
 
-      // Join the ticket room — retries automatically if not yet connected
-      socket.joinTicket(widget.ticket.ticketId);
+      _socket.joinTicket(widget.ticket.ticketId);
     });
   }
 
   @override
   void dispose() {
-    final socket = ref.read(socketServiceProvider);
-    socket.leaveTicket(widget.ticket.ticketId);
-    // Clear the callback so messages don't fire after screen is gone
-    socket.setTicketMessageCallback(null);
+    // Safe — uses saved fields, not ref
+    _socket.leaveTicket(widget.ticket.ticketId);
+    _socket.setTicketMessageCallback(null);
     _msgCtrl.dispose();
     _scrollCtrl.dispose();
     super.dispose();
@@ -146,13 +145,10 @@ class _TicketChatScreenState extends ConsumerState<TicketChatScreen> {
       ),
       body: Column(
         children: [
-          // ── Ticket info banner ──────────────────────────────────────────
           _TicketInfoBanner(ticket: ticket, isTablet: isTablet),
 
-          // ── Messages ────────────────────────────────────────────────────
           Expanded(child: _buildMessages(state, isTablet)),
 
-          // ── Closed notice or input ──────────────────────────────────────
           if (isClosed)
             _ClosedBanner()
           else
@@ -210,7 +206,7 @@ class _TicketChatScreenState extends ConsumerState<TicketChatScreen> {
     final text = _msgCtrl.text.trim();
     if (text.isEmpty) return;
     _msgCtrl.clear();
-    final ok = await ref.read(chatViewModelProvider.notifier).sendMessage(text);
+    final ok = await _chatNotifier.sendMessage(text);
     if (!ok && mounted) {
       final err = ref.read(chatViewModelProvider).errorMessage;
       SnackbarUtils.showError(context, err ?? 'Failed to send');
@@ -251,9 +247,6 @@ class _TicketChatScreenState extends ConsumerState<TicketChatScreen> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Ticket info banner at top of chat
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _TicketInfoBanner extends StatelessWidget {
   final TicketEntity ticket;
@@ -308,9 +301,7 @@ class _TicketInfoBanner extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 // Message bubble
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _MessageBubble extends StatelessWidget {
   final MessageEntity message;
@@ -405,9 +396,7 @@ class _MessageBubble extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 // Date divider
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _DateDivider extends StatelessWidget {
   final DateTime date;
@@ -440,9 +429,7 @@ class _DateDivider extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 // Status dot
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _StatusDot extends StatelessWidget {
   final TicketStatus status;
@@ -464,9 +451,7 @@ class _StatusDot extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 // Closed banner
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _ClosedBanner extends StatelessWidget {
   @override
@@ -484,9 +469,7 @@ class _ClosedBanner extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 // Message input bar
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _MessageInput extends StatelessWidget {
   final TextEditingController controller;
