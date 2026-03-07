@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:project_ease/apps/theme/app_colors.dart';
 import 'package:project_ease/core/utils/snackbar_utils.dart';
-import 'package:project_ease/features/dashboard/presentation/receipt_upload_screen.dart';
+import 'package:project_ease/features/order/presentation/pages/receipt_upload_screen.dart';
 import 'package:project_ease/features/order/domain/entities/order_entity.dart';
 import 'package:project_ease/features/order/presentation/view_model/order_view_model.dart';
 

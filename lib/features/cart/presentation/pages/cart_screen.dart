@@ -5,7 +5,7 @@ import 'package:project_ease/core/api/api_endpoints.dart';
 import 'package:project_ease/features/cart/domain/entities/cart_entity.dart';
 import 'package:project_ease/features/cart/presentation/state/cart_state.dart';
 import 'package:project_ease/features/cart/presentation/view_model/cart_view_model.dart';
-import 'package:project_ease/features/dashboard/presentation/checkout_screen.dart';
+import 'package:project_ease/features/order/presentation/pages/checkout_screen.dart';
 import 'package:project_ease/features/store/presentation/view_model/store_view_model.dart';
 
 class CartScreen extends ConsumerStatefulWidget {

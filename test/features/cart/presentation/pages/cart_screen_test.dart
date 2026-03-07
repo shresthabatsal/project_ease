@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:project_ease/features/cart/domain/entities/cart_entity.dart';
 import 'package:project_ease/features/cart/presentation/state/cart_state.dart';
 import 'package:project_ease/features/cart/presentation/view_model/cart_view_model.dart';
-import 'package:project_ease/features/dashboard/presentation/bottom_navigation_screens/cart_screen.dart';
+import 'package:project_ease/features/cart/presentation/pages/cart_screen.dart';
 import 'package:project_ease/features/product/domain/entities/product_entity.dart';
 import 'package:project_ease/features/store/presentation/state/store_state.dart';
 import 'package:project_ease/features/store/presentation/view_model/store_view_model.dart';

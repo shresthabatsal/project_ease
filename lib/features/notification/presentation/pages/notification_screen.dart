@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:project_ease/apps/theme/app_colors.dart';
 import 'package:project_ease/core/utils/app_fonts.dart';
-import 'package:project_ease/features/dashboard/presentation/bottom_navigation_screens/order_detail_screen.dart';
+import 'package:project_ease/features/order/presentation/pages/order_detail_screen.dart';
 import 'package:project_ease/features/notification/domain/entities/notification_entity.dart';
 import 'package:project_ease/features/notification/presentation/state/notification_state.dart';
 import 'package:project_ease/features/notification/presentation/view_model/notification_view_model.dart';

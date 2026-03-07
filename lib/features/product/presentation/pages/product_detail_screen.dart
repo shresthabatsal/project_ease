@@ -5,7 +5,7 @@ import 'package:project_ease/apps/theme/app_colors.dart';
 import 'package:project_ease/core/api/api_endpoints.dart';
 import 'package:project_ease/features/cart/domain/entities/cart_entity.dart';
 import 'package:project_ease/features/cart/presentation/view_model/cart_view_model.dart';
-import 'package:project_ease/features/dashboard/presentation/checkout_screen.dart';
+import 'package:project_ease/features/order/presentation/pages/checkout_screen.dart';
 import 'package:project_ease/features/product/domain/entities/product_entity.dart';
 import 'package:project_ease/features/rating/presentation/widgets/rating_section.dart';
 import 'package:project_ease/core/utils/snackbar_utils.dart';
@@ -51,7 +51,6 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
     final isTablet = MediaQuery.of(context).size.width >= 600;
     final screenWidth = MediaQuery.of(context).size.width;
     final imageHeight = isTablet ? screenWidth * 0.45 : screenWidth * 0.75;
-    final totalPrice = widget.product.price * _quantity;
 
     return Scaffold(
       backgroundColor: Colors.white,

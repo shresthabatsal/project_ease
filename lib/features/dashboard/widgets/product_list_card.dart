@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:project_ease/apps/theme/app_colors.dart';
 import 'package:project_ease/core/api/api_endpoints.dart';
-import 'package:project_ease/features/dashboard/presentation/product_detail_screen.dart';
+import 'package:project_ease/features/product/presentation/pages/product_detail_screen.dart';
 import 'package:project_ease/features/product/domain/entities/product_entity.dart';
 
 class ProductListCard extends StatelessWidget {

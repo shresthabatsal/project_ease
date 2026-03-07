@@ -9,7 +9,7 @@ import 'package:project_ease/core/utils/snackbar_utils.dart';
 import 'package:project_ease/features/auth/domain/entities/auth_entity.dart';
 import 'package:project_ease/features/auth/presentation/pages/login_screen.dart';
 import 'package:project_ease/features/auth/presentation/view_model/auth_view_model.dart';
-import 'package:project_ease/features/dashboard/presentation/bottom_navigation_screens/my_orders_screen.dart';
+import 'package:project_ease/features/order/presentation/pages/my_orders_screen.dart';
 import 'package:project_ease/features/profile/presentation/state/profile_state.dart';
 import 'package:project_ease/features/profile/presentation/view_model/profile_view_model.dart';
 import 'package:project_ease/features/support/presentation/pages/my_tickets_screen.dart';
@@ -522,6 +522,7 @@ class _Avatar extends StatelessWidget {
   final double size;
   final File? localFile;
 
+  // ignore: unused_element_parameter
   const _Avatar({this.url, required this.size, this.localFile});
 
   @override
