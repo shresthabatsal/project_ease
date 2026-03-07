@@ -1,12 +1,8 @@
 import 'package:equatable/equatable.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:project_ease/features/cart/domain/entities/cart_entity.dart';
-import 'package:project_ease/features/cart/presentation/view_model/cart_view_model.dart';
 
-// Status
 enum CartStatus { initial, loading, loaded, error }
 
-// Stat
 class CartState extends Equatable {
   final CartStatus status;
   final List<CartItemEntity> items;
@@ -35,9 +31,3 @@ class CartState extends Equatable {
   @override
   List<Object?> get props => [status, items, errorMessage];
 }
-
-// Provider
-
-final cartViewModelProvider = NotifierProvider<CartViewModel, CartState>(
-  () => CartViewModel(),
-);

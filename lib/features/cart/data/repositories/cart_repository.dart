@@ -51,16 +51,13 @@ class CartRepository implements ICartRepository {
   }
 
   @override
-  Future<Either<Failure, CartItemEntity>> addToCart({
+  Future<Either<Failure, void>> addToCart({
     required String productId,
     required int quantity,
   }) async {
     try {
-      final model = await _remote.addToCart(
-        productId: productId,
-        quantity: quantity,
-      );
-      return Right(model.toEntity());
+      await _remote.addToCart(productId: productId, quantity: quantity);
+      return const Right(null);
     } catch (e) {
       return _handleError(e, 'Failed to add item to cart.');
     }

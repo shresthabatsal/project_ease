@@ -4,7 +4,7 @@ import 'package:project_ease/features/cart/domain/entities/cart_entity.dart';
 
 abstract interface class ICartRepository {
   Future<Either<Failure, List<CartItemEntity>>> getCart();
-  Future<Either<Failure, CartItemEntity>> addToCart({
+  Future<Either<Failure, void>> addToCart({
     required String productId,
     required int quantity,
   });

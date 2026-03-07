@@ -19,16 +19,13 @@ class CartRemoteDatasource {
         .toList();
   }
 
-  Future<CartItemApiModel> addToCart({
+  Future<void> addToCart({
     required String productId,
     required int quantity,
   }) async {
-    final response = await _apiClient.post(
+    await _apiClient.post(
       ApiEndpoints.addToCart,
       data: {'productId': productId, 'quantity': quantity},
-    );
-    return CartItemApiModel.fromJson(
-      response.data['data'] as Map<String, dynamic>,
     );
   }
 
