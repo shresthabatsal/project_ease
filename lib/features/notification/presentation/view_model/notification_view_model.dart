@@ -1,7 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:project_ease/features/notification/data/repositories/notification_repository.dart';
 import 'package:project_ease/features/notification/domain/entities/notification_entity.dart';
-import 'package:project_ease/features/notification/domain/repositories/notification_repository.dart';
+import 'package:project_ease/features/notification/domain/usecases/delete_notification_usecase.dart';
+import 'package:project_ease/features/notification/domain/usecases/get_notifications_usecase.dart';
+import 'package:project_ease/features/notification/domain/usecases/get_unread_count_usecase.dart';
+import 'package:project_ease/features/notification/domain/usecases/mark_all_as_read_usecase.dart';
+import 'package:project_ease/features/notification/domain/usecases/mark_as_read_usecase.dart';
 import 'package:project_ease/features/notification/presentation/state/notification_state.dart';
 
 final notificationViewModelProvider =
@@ -9,20 +12,26 @@ final notificationViewModelProvider =
       NotificationViewModel.new,
     );
 
-// ViewModel
-
 class NotificationViewModel extends Notifier<NotificationState> {
-  late final INotificationRepository _repo;
+  late final GetNotificationsUsecase _getNotifications;
+  late final GetUnreadCountUsecase _getUnreadCount;
+  late final MarkAsReadUsecase _markAsRead;
+  late final MarkAllAsReadUsecase _markAllAsRead;
+  late final DeleteNotificationUsecase _deleteNotification;
 
   @override
   NotificationState build() {
-    _repo = ref.read(notificationRepositoryProvider);
+    _getNotifications = ref.read(getNotificationsUsecaseProvider);
+    _getUnreadCount = ref.read(getUnreadCountUsecaseProvider);
+    _markAsRead = ref.read(markAsReadUsecaseProvider);
+    _markAllAsRead = ref.read(markAllAsReadUsecaseProvider);
+    _deleteNotification = ref.read(deleteNotificationUsecaseProvider);
     return const NotificationState();
   }
 
   Future<void> loadNotifications() async {
     state = state.copyWith(status: NotificationStatus.loading);
-    final result = await _repo.getNotifications();
+    final result = await _getNotifications();
     result.fold(
       (f) => state = state.copyWith(
         status: NotificationStatus.error,
@@ -40,7 +49,7 @@ class NotificationViewModel extends Notifier<NotificationState> {
   }
 
   Future<void> loadUnreadCount() async {
-    final result = await _repo.getUnreadCount();
+    final result = await _getUnreadCount();
     result.fold((_) {}, (count) => state = state.copyWith(unreadCount: count));
   }
 
@@ -52,7 +61,7 @@ class NotificationViewModel extends Notifier<NotificationState> {
       notifications: updated,
       unreadCount: (state.unreadCount - 1).clamp(0, 999),
     );
-    await _repo.markAsRead(notificationId);
+    await _markAsRead(notificationId);
   }
 
   Future<void> markAllAsRead() async {
@@ -60,7 +69,7 @@ class NotificationViewModel extends Notifier<NotificationState> {
         .map((n) => n.copyWith(isRead: true))
         .toList();
     state = state.copyWith(notifications: updated, unreadCount: 0);
-    await _repo.markAllAsRead();
+    await _markAllAsRead();
   }
 
   Future<void> deleteNotification(String notificationId) async {
@@ -69,7 +78,7 @@ class NotificationViewModel extends Notifier<NotificationState> {
         .toList();
     final unread = updated.where((n) => !n.isRead).length;
     state = state.copyWith(notifications: updated, unreadCount: unread);
-    await _repo.deleteNotification(notificationId);
+    await _deleteNotification(notificationId);
   }
 
   void addRealtimeNotification(NotificationEntity notification) {
@@ -80,7 +89,5 @@ class NotificationViewModel extends Notifier<NotificationState> {
     );
   }
 
-  void setUnreadCount(int count) {
-    state = state.copyWith(unreadCount: count);
-  }
+  void setUnreadCount(int count) => state = state.copyWith(unreadCount: count);
 }
