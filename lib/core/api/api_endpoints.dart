@@ -6,7 +6,7 @@ class ApiEndpoints {
   ApiEndpoints._();
 
   // Configuration
-  static const bool isPhysicalDevice = false;
+  static const bool isPhysicalDevice = true;
   static const String _ipAddress = '192.168.101.6';
   static const int _port = 5050;
 
@@ -30,6 +30,7 @@ class ApiEndpoints {
   static const String register = '/auth/register';
   static const String login = '/auth/login';
   static const String requestPasswordReset = '/auth/request-password-reset';
+  static const String googleAuth = '/auth/google';
 
   // ========== User Profile Endpoints ==========
   static const String getProfile = '/auth/profile';
@@ -106,8 +107,6 @@ class ApiEndpoints {
       '/user/ratings/product/$productId';
   static String updateRating(String id) => '/user/ratings/$id';
   static String deleteRating(String id) => '/user/ratings/$id';
-
-  static const String googleAuth = '/auth/google';
 
   // ========== Support / Ticket Endpoints ==========
   static const String createTicket = '/support/tickets';

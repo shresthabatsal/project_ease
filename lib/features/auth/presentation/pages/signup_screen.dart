@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:project_ease/apps/routes/app_routes.dart';
 import 'package:project_ease/apps/theme/app_colors.dart';
 import 'package:project_ease/core/utils/snackbar_utils.dart';
+import 'package:project_ease/core/widgets/google_logo_icon.dart';
 import 'package:project_ease/features/auth/presentation/pages/login_screen.dart';
 import 'package:project_ease/core/widgets/custom_button.dart';
 import 'package:project_ease/core/widgets/custom_text_form_field.dart';
@@ -330,7 +330,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
                   // Continue With Google
                   CustomButton(
-                    leadingIcon: FontAwesomeIcons.google,
+                    leadingWidget: const GoogleLogoIcon(size: 20),
                     text: "Continue with Google",
                     color: Colors.white,
                     onPressed: () async {

@@ -9,6 +9,7 @@ class CustomButton extends StatelessWidget {
     required this.text,
     this.color,
     this.leadingIcon,
+    this.leadingWidget,
     this.isLoading = false,
   });
 
@@ -16,6 +17,7 @@ class CustomButton extends StatelessWidget {
   final String text;
   final Color? color;
   final IconData? leadingIcon;
+  final Widget? leadingWidget;
   final bool isLoading;
 
   @override
@@ -50,13 +52,17 @@ class CustomButton extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (leadingIcon != null)
+                  if (leadingWidget != null) ...[
+                    leadingWidget!,
+                    SizedBox(width: isTablet ? 12 : 8),
+                  ] else if (leadingIcon != null) ...[
                     Icon(
                       leadingIcon,
                       color: Colors.black,
                       size: isTablet ? 28 : 20,
                     ),
-                  if (leadingIcon != null) SizedBox(width: isTablet ? 12 : 8),
+                    SizedBox(width: isTablet ? 12 : 8),
+                  ],
                   Text(
                     text,
                     style: TextStyle(

@@ -153,24 +153,20 @@ class AuthRepository implements IAuthRepository {
   }
 
   @override
-Future<Either<Failure, AuthEntity>> googleAuth(String googleToken) async {
-  if (await _networkInfo.isConnected) {
+  Future<Either<Failure, AuthEntity>> googleLogin(String idToken) async {
     try {
-      final apiModel = await _authRemoteDatasource.googleAuth(googleToken);
-      if (apiModel != null) {
-        return Right(apiModel.toEntity());
-      }
-      return const Left(ApiFailure(message: "Google authentication failed."));
+      final apiModel = await _authRemoteDatasource.googleLogin(idToken);
+      if (apiModel != null) return Right(apiModel.toEntity());
+      return const Left(ApiFailure(message: 'Google login failed.'));
     } on DioException catch (e) {
-      return Left(ApiFailure(
-        message: e.response?.data["message"] ?? "Google authentication failed.",
-        statusCode: e.response?.statusCode,
-      ));
+      return Left(
+        ApiFailure(
+          message: e.response?.data['message'] ?? 'Google login failed.',
+          statusCode: e.response?.statusCode,
+        ),
+      );
     } catch (e) {
       return Left(ApiFailure(message: e.toString()));
     }
-  } else {
-    return const Left(ApiFailure(message: "No internet connection."));
   }
-}
 }

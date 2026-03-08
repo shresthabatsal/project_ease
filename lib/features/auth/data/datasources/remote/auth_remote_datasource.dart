@@ -86,27 +86,27 @@ class AuthRemoteDatasource implements IAuthRemoteDatasource {
     return response.data["success"] == true;
   }
 
+  Future<void> _saveSession(AuthApiModel user, String token) async {
+    await _userSessionService.saveUserSession(
+      userId: user.id!,
+      email: user.email,
+      phoneNumber: user.phoneNumber,
+      fullName: user.fullName,
+    );
+    await _tokenService.saveToken(token);
+  }
+
   @override
-  Future<AuthApiModel?> googleAuth(String googleToken) async {
+  Future<AuthApiModel?> googleLogin(String idToken) async {
     final response = await _apiClient.post(
       ApiEndpoints.googleAuth,
-      data: {'token': googleToken},
+      data: {'token': idToken},
     );
 
-    if (response.data["success"] == true) {
-      final data = response.data["data"] as Map<String, dynamic>;
-      final user = AuthApiModel.fromJson(data);
-
-      await _userSessionService.saveUserSession(
-        userId: user.id!,
-        email: user.email,
-        phoneNumber: user.phoneNumber,
-        fullName: user.fullName,
-      );
-
-      final token = response.data["token"];
-      await _tokenService.saveToken(token);
-
+    if (response.data['success'] == true) {
+      final user = AuthApiModel.fromJson(
+          response.data['data'] as Map<String, dynamic>);
+      await _saveSession(user, response.data['token']);
       return user;
     }
     return null;

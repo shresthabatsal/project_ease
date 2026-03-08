@@ -8,5 +8,5 @@ abstract interface class IAuthRepository {
   Future<Either<Failure, AuthEntity>> getCurrentUser();
   Future<Either<Failure, bool>> logoutUser();
   Future<Either<Failure, bool>> sendPasswordResetEmail(String email);
-  Future<Either<Failure, AuthEntity>> googleAuth(String googleToken);
+  Future<Either<Failure, AuthEntity>> googleLogin(String idToken);
 }
