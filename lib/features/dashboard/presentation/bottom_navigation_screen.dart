@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,16 +8,16 @@ import 'package:project_ease/core/services/websocket/socket_service.dart';
 import 'package:project_ease/core/utils/app_fonts.dart';
 import 'package:project_ease/core/utils/proximity_service.dart';
 import 'package:project_ease/core/utils/shake_detector.dart';
-import 'package:project_ease/features/cart/presentation/view_model/cart_view_model.dart';
-import 'package:project_ease/features/profile/presentation/pages/account_screen.dart';
 import 'package:project_ease/features/cart/presentation/pages/cart_screen.dart';
+import 'package:project_ease/features/cart/presentation/view_model/cart_view_model.dart';
 import 'package:project_ease/features/dashboard/presentation/home_screen.dart';
-import 'package:project_ease/features/order/presentation/pages/my_orders_screen.dart';
-import 'package:project_ease/features/order/presentation/pages/order_detail_screen.dart';
-import 'package:project_ease/features/product/presentation/pages/search_screen.dart';
 import 'package:project_ease/features/notification/data/models/notification_api_model.dart';
 import 'package:project_ease/features/notification/presentation/view_model/notification_view_model.dart';
+import 'package:project_ease/features/order/presentation/pages/my_orders_screen.dart';
+import 'package:project_ease/features/order/presentation/pages/order_detail_screen.dart';
 import 'package:project_ease/features/order/presentation/view_model/order_view_model.dart';
+import 'package:project_ease/features/product/presentation/pages/search_screen.dart';
+import 'package:project_ease/features/profile/presentation/pages/account_screen.dart';
 import 'package:project_ease/features/support/data/models/message_api_model.dart';
 import 'package:project_ease/features/support/presentation/view_model/chat_view_model.dart';
 
@@ -32,6 +33,7 @@ class _BottomNavigationScreenState
     extends ConsumerState<BottomNavigationScreen> {
   int _selectedIndex = 0;
   bool _isNearSensor = false;
+  bool _proximitySensorReady = false;
 
   late final ShakeDetector _shakeDetector;
   late final ProximityService _proximityService;
@@ -40,18 +42,32 @@ class _BottomNavigationScreenState
   @override
   void initState() {
     super.initState();
+
     _shakeDetector = ShakeDetector(onShake: _onShake);
+
     _proximityService = ProximityService(
-      onNear: () => setState(() => _isNearSensor = true),
-      onFar: () => setState(() => _isNearSensor = false),
+      onNear: () {
+        if (!mounted || !_proximitySensorReady) return;
+        setState(() => _isNearSensor = true);
+      },
+      onFar: () {
+        if (!mounted) return;
+        setState(() => _isNearSensor = false);
+      },
     );
+
     _socketService = ref.read(socketServiceProvider);
 
     Future.microtask(() {
-      if (ref.read(appSettingsProvider).shakeEnabled) _shakeDetector.start();
+      if (ref.read(appSettingsProvider).shakeEnabled) {
+        _shakeDetector.start();
+      }
 
-      // Proximity is always active — no setting toggle needed
       _proximityService.start();
+
+      Future.delayed(const Duration(milliseconds: 800), () {
+        if (mounted) setState(() => _proximitySensorReady = true);
+      });
 
       ref.read(orderViewModelProvider.notifier).loadOrders();
       ref.read(notificationViewModelProvider.notifier).loadUnreadCount();
@@ -78,8 +94,6 @@ class _BottomNavigationScreenState
     }
   }
 
-  // WebSocket handlers
-
   void _onRealtimeNotification(Map<String, dynamic> payload) {
     if (!mounted) return;
     try {
@@ -88,10 +102,9 @@ class _BottomNavigationScreenState
         'isRead': false,
         'createdAt': payload['createdAt'] ?? DateTime.now().toIso8601String(),
       });
-      final entity = model.toEntity();
       ref
           .read(notificationViewModelProvider.notifier)
-          .addRealtimeNotification(entity);
+          .addRealtimeNotification(model.toEntity());
     } catch (_) {
       final current = ref.read(notificationViewModelProvider).unreadCount;
       ref
@@ -115,41 +128,46 @@ class _BottomNavigationScreenState
     } catch (_) {}
   }
 
-  // ── Shake handler ─────────────────────────────────────────────────────────
+  bool _isHandlingShake = false;
 
   Future<void> _onShake() async {
-    if (!mounted) return;
+    if (!mounted || _isHandlingShake) return;
+    _isHandlingShake = true;
     HapticFeedback.mediumImpact();
 
-    final orders = ref.read(orderViewModelProvider).orders;
-    if (orders.isEmpty) {
-      await ref.read(orderViewModelProvider.notifier).loadOrders();
-    }
-    if (!mounted) return;
+    try {
+      final orders = ref.read(orderViewModelProvider).orders;
+      if (orders.isEmpty) {
+        await ref.read(orderViewModelProvider.notifier).loadOrders();
+      }
+      if (!mounted) return;
 
-    final ready = ref
-        .read(orderViewModelProvider)
-        .orders
-        .where((o) => o.status == 'READY_FOR_COLLECTION')
-        .toList();
+      final ready = ref
+          .read(orderViewModelProvider)
+          .orders
+          .where((o) => o.status == 'READY_FOR_COLLECTION')
+          .toList();
 
-    if (ready.length == 1) {
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => OrderDetailScreen(orderId: ready.first.orderId),
-        ),
-      );
-    } else if (ready.length > 1) {
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) =>
-              const MyOrdersScreen(initialFilter: 'READY_FOR_COLLECTION'),
-        ),
-      );
-    } else {
-      Navigator.of(
-        context,
-      ).push(MaterialPageRoute(builder: (_) => const MyOrdersScreen()));
+      if (ready.length == 1) {
+        await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => OrderDetailScreen(orderId: ready.first.orderId),
+          ),
+        );
+      } else if (ready.length > 1) {
+        await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) =>
+                const MyOrdersScreen(initialFilter: 'READY_FOR_COLLECTION'),
+          ),
+        );
+      } else {
+        await Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => const MyOrdersScreen()));
+      }
+    } finally {
+      _isHandlingShake = false;
     }
   }
 
@@ -185,6 +203,8 @@ class _BottomNavigationScreenState
             type: BottomNavigationBarType.fixed,
             elevation: 12,
             backgroundColor: Colors.white,
+            currentIndex: _selectedIndex,
+            onTap: (i) => setState(() => _selectedIndex = i),
             items: [
               const BottomNavigationBarItem(
                 icon: Icon(Icons.home_rounded),
@@ -233,14 +253,15 @@ class _BottomNavigationScreenState
                 label: 'Profile',
               ),
             ],
-            currentIndex: _selectedIndex,
-            onTap: (i) => setState(() => _selectedIndex = i),
           ),
         ),
 
         if (_isNearSensor)
-          const Positioned.fill(
-            child: IgnorePointer(child: ColoredBox(color: Colors.black)),
+          Positioned.fill(
+            child: GestureDetector(
+              onDoubleTap: () => setState(() => _isNearSensor = false),
+              child: const ColoredBox(color: Colors.black),
+            ),
           ),
       ],
     );

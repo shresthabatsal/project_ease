@@ -1,6 +1,7 @@
 import 'dart:async';
+import 'dart:io';
+import 'package:all_sensors/all_sensors.dart';
 import 'package:flutter/material.dart';
-import 'package:proximity_sensor/proximity_sensor.dart';
 
 class ProximityService {
   final VoidCallback onNear;
@@ -8,27 +9,44 @@ class ProximityService {
 
   ProximityService({required this.onNear, required this.onFar});
 
-  StreamSubscription<int>? _subscription;
+  StreamSubscription<ProximityEvent>? _subscription;
+  bool _started = false;
   bool _isNear = false;
-
-  bool get isNear => _isNear;
+  Timer? _startupIgnoreTimer;
 
   void start() {
-    _subscription = ProximitySensor.events.listen((int event) {
-      final near = event == 1;
-      if (near == _isNear) return;
-      _isNear = near;
-      if (near) {
-        onNear();
-      } else {
-        onFar();
-      }
+    if (!Platform.isAndroid) return;
+
+    _started = false;
+    _isNear = false;
+
+    _startupIgnoreTimer = Timer(const Duration(milliseconds: 500), () {
+      _started = true;
     });
+
+    _subscription = proximityEvents?.listen(
+      (ProximityEvent event) {
+        final bool near = event.getValue();
+        debugPrint('🔵 Proximity near: $near, started: $_started');
+
+        if (!_started) return;
+        if (near == _isNear) return;
+        _isNear = near;
+
+        near ? onNear() : onFar();
+      },
+      onError: (e) {
+        debugPrint('Proximity error: $e');
+      },
+    );
   }
 
   void stop() {
+    _startupIgnoreTimer?.cancel();
     _subscription?.cancel();
+    _startupIgnoreTimer = null;
     _subscription = null;
     _isNear = false;
+    _started = false;
   }
 }
