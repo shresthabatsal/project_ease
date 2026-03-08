@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "327888188050",
+    "project_id": "projectease-e4e5d",
+    "storage_bucket": "projectease-e4e5d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:327888188050:android:dd90e0cbaa2a74c3e36c4b",
+        "android_client_info": {
+          "package_name": "com.batsal.project_ease.project_ease"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "327888188050-53ehdsv5vf3fdk9pg1h2qqtgg3ud87us.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.batsal.project_ease.project_ease",
+            "certificate_hash": "ffeaf1293f015c70c45f9f9d61e2ba7c5f542dbf"
+          }
+        },
+        {
+          "client_id": "327888188050-0gbnkpju4ulua3391bg5jautmmddl8qi.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB17o5lSuRtI1aI7iRrhUE7m8dVcJ4VokE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "327888188050-0gbnkpju4ulua3391bg5jautmmddl8qi.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

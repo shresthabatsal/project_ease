@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Project Ease</string>
+	<string>Ease</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -53,5 +53,16 @@
 	<string>This app requires photo library access to select photos and videos.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Used to find the nearest store to you</string>
+	<key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>com.googleusercontent.apps.com.googleusercontent.apps.327888188050-889bs726dp3esnf8edhrhg6rfmmiq1u8</string>
+            </array>
+        </dict>
+    </array>
 </dict>
 </plist>
