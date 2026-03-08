@@ -3,10 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:project_ease/apps/theme/app_colors.dart';
 import 'package:project_ease/core/utils/snackbar_utils.dart';
 import 'package:project_ease/features/cart/domain/entities/cart_entity.dart';
+import 'package:project_ease/features/cart/presentation/view_model/cart_view_model.dart';
+import 'package:project_ease/features/order/domain/entities/order_entity.dart';
 import 'package:project_ease/features/order/presentation/pages/receipt_upload_screen.dart';
 import 'package:project_ease/features/order/presentation/state/order_state.dart';
 import 'package:project_ease/features/order/presentation/view_model/order_view_model.dart';
 import 'package:project_ease/features/product/domain/entities/product_entity.dart';
+import 'package:project_ease/features/store/data/datasources/remote/store_remote_datasource.dart';
 
 class CheckoutScreen extends ConsumerStatefulWidget {
   final String storeId;
@@ -60,13 +63,32 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
   String get _pickupDateISO {
     final d = _pickupDate!;
-    return '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+    return '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}T12:00:00.000Z';
   }
 
   String get _pickupTimeHHMM {
     final h = _pickupTime!.hour.toString().padLeft(2, '0');
     final m = _pickupTime!.minute.toString().padLeft(2, '0');
     return '$h:$m';
+  }
+
+  bool _isToday(DateTime date) {
+    final now = DateTime.now();
+    return date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day;
+  }
+
+  bool _isTimeFuture(TimeOfDay time, {int minMinutesAhead = 30}) {
+    final now = DateTime.now();
+    final selected = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      time.hour,
+      time.minute,
+    );
+    return selected.isAfter(now.add(Duration(minutes: minMinutesAhead)));
   }
 
   Future<void> _selectDate() async {
@@ -87,14 +109,18 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       setState(() {
         _pickupDate = picked;
         _dateError = null;
+        if (_pickupTime != null) {
+          _timeError = _validateTime(_pickupTime!, picked);
+        }
       });
     }
   }
 
   Future<void> _selectTime() async {
+    final now = TimeOfDay.now();
     final picked = await showTimePicker(
       context: context,
-      initialTime: _pickupTime ?? TimeOfDay.now(),
+      initialTime: _pickupTime ?? now,
       initialEntryMode: TimePickerEntryMode.input,
       builder: (context, child) => Theme(
         data: Theme.of(
@@ -104,19 +130,39 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       ),
     );
     if (picked != null) {
+      final error = _validateTime(picked, _pickupDate);
       setState(() {
         _pickupTime = picked;
-        _timeError = null;
+        _timeError = error;
       });
     }
   }
 
+  String? _validateTime(TimeOfDay time, DateTime? date) {
+    if (date == null) return null; // date not selected yet, skip
+    if (!_isToday(date)) return null; // future date, any time is fine
+    if (!_isTimeFuture(time)) {
+      return 'Please select a time at least 30 minutes from now';
+    }
+    return null;
+  }
+
   bool _validate() {
+    final timeError = _pickupTime != null
+        ? _validateTime(_pickupTime!, _pickupDate)
+        : null;
+
     setState(() {
       _dateError = _pickupDate == null ? 'Please select a pickup date' : null;
-      _timeError = _pickupTime == null ? 'Please select a pickup time' : null;
+      _timeError = _pickupTime == null
+          ? 'Please select a pickup time'
+          : timeError;
     });
-    return _pickupDate != null && _pickupTime != null;
+
+    return _pickupDate != null &&
+        _pickupTime != null &&
+        _dateError == null &&
+        _timeError == null;
   }
 
   Future<void> _placeOrder() async {
@@ -137,6 +183,19 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
             : _notesController.text.trim(),
       );
     } else {
+      await ref.read(cartViewModelProvider.notifier).loadCart();
+      if (!mounted) return;
+
+      final cartItems = ref.read(cartViewModelProvider).items;
+      if (cartItems.isEmpty) {
+        SnackbarUtils.showError(
+          context,
+          'Some items in your cart are no longer available. Your cart has been updated.',
+        );
+        Navigator.pop(context);
+        return;
+      }
+
       success = await vm.createOrder(
         storeId: widget.storeId,
         pickupDate: _pickupDateISO,
@@ -151,9 +210,37 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
     if (success) {
       final order = ref.read(orderViewModelProvider).currentOrder!;
+
+      OrderEntity orderWithQr = order;
+      try {
+        final store = await ref
+            .read(storeRemoteDatasourceProvider)
+            .getStoreById(widget.storeId);
+        if (store != null && store.paymentQrCode != null) {
+          orderWithQr = OrderEntity(
+            orderId: order.orderId,
+            storeId: order.storeId,
+            storeName: order.storeName,
+            items: order.items,
+            totalAmount: order.totalAmount,
+            otp: order.otp,
+            notes: order.notes,
+            pickupDate: order.pickupDate,
+            pickupTime: order.pickupTime,
+            paymentStatus: order.paymentStatus,
+            status: order.status,
+            orderDate: order.orderDate,
+            storePaymentQrCode: store.paymentQrCode,
+          );
+        }
+      } catch (_) {}
+
+      if (!mounted) return;
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => ReceiptUploadScreen(order: order)),
+        MaterialPageRoute(
+          builder: (_) => ReceiptUploadScreen(order: orderWithQr),
+        ),
       );
     } else {
       final error = ref.read(orderViewModelProvider).errorMessage;
@@ -192,251 +279,262 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: Container(
-        padding: EdgeInsets.fromLTRB(
-          isTablet ? 32 : 16,
-          14,
-          isTablet ? 32 : 16,
-          14,
-        ),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 16,
-              offset: const Offset(0, -4),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(
+              isTablet ? 32 : 16,
+              12,
+              isTablet ? 32 : 16,
+              120 + MediaQuery.of(context).padding.bottom,
             ),
-          ],
-        ),
-        child: SizedBox(
-          width: double.infinity,
-          height: isTablet ? 54 : 50,
-          child: ElevatedButton(
-            onPressed: isLoading ? null : _placeOrder,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              disabledBackgroundColor: Colors.grey.shade200,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-            ),
-            child: isLoading
-                ? const SizedBox(
-                    width: 22,
-                    height: 22,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.5,
-                      color: Colors.white,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (widget.storeName != null) ...[
+                  _SectionCard(
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.store_outlined,
+                            size: 18,
+                            color: AppColors.primary,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Store',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.grey.shade500,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  widget.storeName!,
+                                  style: TextStyle(
+                                    fontSize: isTablet ? 15 : 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                ],
+
+                _SectionLabel(label: 'Order Summary', isTablet: isTablet),
+                const SizedBox(height: 8),
+                _SectionCard(
+                  children: [
+                    ...widget.items.map(
+                      (item) => _OrderItemRow(item: item, isTablet: isTablet),
                     ),
-                  )
-                : Text(
-                    'Place Order - NPR ${widget.total.toStringAsFixed(0)}',
+                    const Divider(height: 20, color: Color(0xFFEEEEEE)),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Total',
+                          style: TextStyle(
+                            fontSize: isTablet ? 16 : 14,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        Text(
+                          'NPR ${widget.total.toStringAsFixed(0)}',
+                          style: TextStyle(
+                            fontSize: isTablet ? 18 : 16,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 20),
+
+                _SectionLabel(label: 'Pickup Details', isTablet: isTablet),
+                const SizedBox(height: 8),
+                _SectionCard(
+                  children: [
+                    _PickerRow(
+                      icon: Icons.calendar_today_outlined,
+                      label: 'Pickup Date',
+                      value: _formattedDate,
+                      hasValue: _pickupDate != null,
+                      error: _dateError,
+                      isTablet: isTablet,
+                      onTap: _selectDate,
+                    ),
+                    const Divider(height: 20, color: Color(0xFFEEEEEE)),
+                    _PickerRow(
+                      icon: Icons.access_time_rounded,
+                      label: 'Pickup Time',
+                      value: _formattedTime,
+                      hasValue: _pickupTime != null,
+                      error: _timeError,
+                      isTablet: isTablet,
+                      onTap: _selectTime,
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 20),
+
+                _SectionLabel(
+                  label: 'Order Notes (optional)',
+                  isTablet: isTablet,
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.04),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: TextField(
+                    controller: _notesController,
+                    maxLines: 3,
+                    maxLength: 500,
                     style: TextStyle(
-                      fontSize: isTablet ? 16 : 15,
-                      fontWeight: FontWeight.w700,
+                      fontSize: isTablet ? 15 : 14,
+                      color: Colors.black87,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: 'Any special instructions...',
+                      hintStyle: TextStyle(
+                        color: Colors.grey.shade400,
+                        fontSize: isTablet ? 14 : 13,
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.all(16),
+                      counterStyle: TextStyle(
+                        color: Colors.grey.shade400,
+                        fontSize: 11,
+                      ),
                     ),
                   ),
-          ),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(
-          isTablet ? 32 : 16,
-          12,
-          isTablet ? 32 : 16,
-          16,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Store
-            if (widget.storeName != null) ...[
-              _SectionCard(
-                children: [
-                  Row(
+                ),
+
+                const SizedBox(height: 8),
+
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.06),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: AppColors.primary.withOpacity(0.2),
+                    ),
+                  ),
+                  child: Row(
                     children: [
                       Icon(
-                        Icons.store_outlined,
-                        size: 18,
+                        Icons.info_outline_rounded,
+                        size: 16,
                         color: AppColors.primary,
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 8),
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Store',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey.shade500,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              widget.storeName!,
-                              style: TextStyle(
-                                fontSize: isTablet ? 15 : 14,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.black87,
-                              ),
-                            ),
-                          ],
+                        child: Text(
+                          "After placing the order, you'll be asked to upload your payment receipt. Your order will be confirmed once payment is verified.",
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.primary,
+                            height: 1.4,
+                          ),
                         ),
                       ),
                     ],
                   ),
-                ],
+                ),
+              ],
+            ),
+          ),
+
+          // Sticky bottom button
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              padding: EdgeInsets.fromLTRB(
+                isTablet ? 32 : 16,
+                14,
+                isTablet ? 32 : 16,
+                14 + MediaQuery.of(context).padding.bottom,
               ),
-              const SizedBox(height: 12),
-            ],
-
-            // Order Summary
-            _SectionLabel(label: 'Order Summary', isTablet: isTablet),
-            const SizedBox(height: 8),
-            _SectionCard(
-              children: [
-                ...widget.items.map(
-                  (item) => _OrderItemRow(item: item, isTablet: isTablet),
-                ),
-                const Divider(height: 20, color: Color(0xFFEEEEEE)),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Total',
-                      style: TextStyle(
-                        fontSize: isTablet ? 16 : 14,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    Text(
-                      'NPR ${widget.total.toStringAsFixed(0)}',
-                      style: TextStyle(
-                        fontSize: isTablet ? 18 : 16,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 20),
-
-            // Pickup Details
-            _SectionLabel(label: 'Pickup Details', isTablet: isTablet),
-            const SizedBox(height: 8),
-            _SectionCard(
-              children: [
-                _PickerRow(
-                  icon: Icons.calendar_today_outlined,
-                  label: 'Pickup Date',
-                  value: _formattedDate,
-                  hasValue: _pickupDate != null,
-                  error: _dateError,
-                  isTablet: isTablet,
-                  onTap: _selectDate,
-                ),
-                const Divider(height: 20, color: Color(0xFFEEEEEE)),
-                _PickerRow(
-                  icon: Icons.access_time_rounded,
-                  label: 'Pickup Time',
-                  value: _formattedTime,
-                  hasValue: _pickupTime != null,
-                  error: _timeError,
-                  isTablet: isTablet,
-                  onTap: _selectTime,
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 20),
-
-            // Notes
-            _SectionLabel(label: 'Order Notes (optional)', isTablet: isTablet),
-            const SizedBox(height: 8),
-            Container(
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 16,
+                    offset: const Offset(0, -4),
                   ),
                 ],
               ),
-              child: TextField(
-                controller: _notesController,
-                maxLines: 3,
-                maxLength: 500,
-                style: TextStyle(
-                  fontSize: isTablet ? 15 : 14,
-                  color: Colors.black87,
-                ),
-                decoration: InputDecoration(
-                  hintText: 'Any special instructions...',
-                  hintStyle: TextStyle(
-                    color: Colors.grey.shade400,
-                    fontSize: isTablet ? 14 : 13,
-                  ),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.all(16),
-                  counterStyle: TextStyle(
-                    color: Colors.grey.shade400,
-                    fontSize: 11,
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 8),
-
-            // Payment info note
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.06),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AppColors.primary.withOpacity(0.2)),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.info_outline_rounded,
-                    size: 16,
-                    color: AppColors.primary,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      "After placing the order, you'll be asked to upload your payment receipt. Your order will be confirmed once payment is verified.",
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.primary,
-                        height: 1.4,
-                      ),
+              child: SizedBox(
+                width: double.infinity,
+                height: isTablet ? 54 : 50,
+                child: ElevatedButton(
+                  onPressed: isLoading ? null : _placeOrder,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    disabledBackgroundColor: Colors.grey.shade200,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
                     ),
                   ),
-                ],
+                  child: isLoading
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Text(
+                          'Place Order — NPR ${widget.total.toStringAsFixed(0)}',
+                          style: TextStyle(
+                            fontSize: isTablet ? 16 : 15,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 }
 
-// Helpers
 class _SectionLabel extends StatelessWidget {
   final String label;
   final bool isTablet;

@@ -3,14 +3,23 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:project_ease/apps/theme/app_colors.dart';
 import 'package:project_ease/core/utils/snackbar_utils.dart';
-import 'package:project_ease/features/order/presentation/pages/receipt_upload_screen.dart';
 import 'package:project_ease/features/order/domain/entities/order_entity.dart';
+import 'package:project_ease/features/order/domain/entities/payment_entity.dart';
+import 'package:project_ease/features/order/domain/usecases/get_order_payment_usecase.dart';
+import 'package:project_ease/features/order/presentation/pages/receipt_upload_screen.dart';
 import 'package:project_ease/features/order/presentation/view_model/order_view_model.dart';
 
 final _orderDetailProvider = FutureProvider.autoDispose
     .family<OrderEntity?, String>((ref, orderId) async {
       final vm = ref.read(orderViewModelProvider.notifier);
       return vm.fetchOrder(orderId);
+    });
+
+final _orderPaymentProvider = FutureProvider.autoDispose
+    .family<PaymentEntity?, String>((ref, orderId) async {
+      final usecase = ref.read(getOrderPaymentUsecaseProvider);
+      final result = await usecase(orderId);
+      return result.fold((_) => null, (p) => p);
     });
 
 class OrderDetailScreen extends ConsumerWidget {
@@ -21,6 +30,7 @@ class OrderDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(_orderDetailProvider(orderId));
+    final paymentAsync = ref.watch(_orderPaymentProvider(orderId));
     final isTablet = MediaQuery.of(context).size.width >= 600;
 
     return Scaffold(
@@ -47,7 +57,10 @@ class OrderDetailScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: Icon(Icons.refresh_rounded, color: AppColors.primary),
-            onPressed: () => ref.invalidate(_orderDetailProvider(orderId)),
+            onPressed: () {
+              ref.invalidate(_orderDetailProvider(orderId));
+              ref.invalidate(_orderPaymentProvider(orderId));
+            },
           ),
         ],
       ),
@@ -55,17 +68,30 @@ class OrderDetailScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, __) => _ErrorView(
           message: e.toString(),
-          onRetry: () => ref.invalidate(_orderDetailProvider(orderId)),
+          onRetry: () {
+            ref.invalidate(_orderDetailProvider(orderId));
+            ref.invalidate(_orderPaymentProvider(orderId));
+          },
         ),
         data: (order) {
           if (order == null) {
             return _ErrorView(
               message: 'Order not found.',
-              onRetry: () => ref.invalidate(_orderDetailProvider(orderId)),
+              onRetry: () {
+                ref.invalidate(_orderDetailProvider(orderId));
+                ref.invalidate(_orderPaymentProvider(orderId));
+              },
             );
           }
+          // payment is null until receipt is submitted
+          final payment = paymentAsync.when(
+            data: (p) => p,
+            loading: () => null,
+            error: (_, __) => null,
+          );
           return _DetailBody(
             order: order,
+            payment: payment,
             orderId: orderId,
             isTablet: isTablet,
           );
@@ -75,21 +101,33 @@ class OrderDetailScreen extends ConsumerWidget {
   }
 }
 
-// Detail Body
+// ─────────────────────────────────────────────────────────────────────────────
+// _DetailBody
+// ─────────────────────────────────────────────────────────────────────────────
 
 class _DetailBody extends ConsumerWidget {
   final OrderEntity order;
+  final PaymentEntity? payment; // null = no receipt submitted yet
   final String orderId;
   final bool isTablet;
 
   const _DetailBody({
     required this.order,
+    required this.payment,
     required this.orderId,
     required this.isTablet,
   });
 
+  // Show Pay Now only if no receipt has been submitted yet
   bool get _canPay =>
-      order.paymentStatus == 'PENDING' && order.status != 'CANCELLED';
+      payment == null &&
+      order.paymentStatus == 'PENDING' &&
+      order.status != 'CANCELLED' &&
+      order.status != 'COLLECTED';
+
+  // Show "receipt submitted, awaiting verification" state
+  bool get _receiptSubmitted =>
+      payment != null && order.paymentStatus == 'PENDING';
 
   bool get _canCancel =>
       order.status != 'COLLECTED' && order.status != 'CANCELLED';
@@ -112,11 +150,15 @@ class _DetailBody extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Status banner
-                _StatusBanner(order: order, isTablet: isTablet),
+                _StatusBanner(
+                  order: order,
+                  receiptSubmitted: _receiptSubmitted,
+                  isTablet: isTablet,
+                ),
 
                 const SizedBox(height: 16),
 
-                // Pickup code
+                // Pickup code (only after payment verified)
                 if (_showOtp) ...[
                   _OtpCard(otp: order.otp!, isTablet: isTablet),
                   const SizedBox(height: 16),
@@ -162,7 +204,7 @@ class _DetailBody extends ConsumerWidget {
 
                 const SizedBox(height: 12),
 
-                // Items
+                // ── Items ────────────────────────────────────────────────
                 _SectionCard(
                   title: 'Items',
                   children: [
@@ -199,7 +241,7 @@ class _DetailBody extends ConsumerWidget {
 
                 const SizedBox(height: 12),
 
-                // Payment
+                // ── Payment ──────────────────────────────────────────────
                 _SectionCard(
                   title: 'Payment',
                   children: [
@@ -214,6 +256,28 @@ class _DetailBody extends ConsumerWidget {
                       valueColor: _paymentColor(order.paymentStatus),
                       isTablet: isTablet,
                     ),
+                    if (_receiptSubmitted)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 6),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.schedule_rounded,
+                              size: 14,
+                              color: Colors.orange.shade600,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Receipt submitted · Awaiting admin verification',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.orange.shade700,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                   ],
                 ),
 
@@ -223,7 +287,7 @@ class _DetailBody extends ConsumerWidget {
           ),
         ),
 
-        // Action buttons
+        // ── Action buttons ───────────────────────────────────────────────
         if (_canPay || _canCancel)
           _BottomActions(
             canPay: _canPay,
@@ -330,8 +394,6 @@ class _DetailBody extends ConsumerWidget {
     }
   }
 
-  // Helpers
-
   static String _shortId(String id) =>
       '#${id.length > 8 ? id.substring(id.length - 8).toUpperCase() : id.toUpperCase()}';
 
@@ -341,14 +403,15 @@ class _DetailBody extends ConsumerWidget {
   static String _fmtDateTime(DateTime d) =>
       '${_fmtDate(d)} · ${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
 
-  static String _paymentLabel(String s) => switch (s) {
-    'PENDING' => 'Awaiting payment',
+  String _paymentLabel(String s) => switch (s) {
+    'PENDING' =>
+      _receiptSubmitted ? 'Pending Verification' : 'Awaiting payment',
     'VERIFIED' => 'Verified',
     'FAILED' => 'Failed',
     _ => s,
   };
 
-  static Color _paymentColor(String s) => switch (s) {
+  Color _paymentColor(String s) => switch (s) {
     'PENDING' => Colors.orange,
     'VERIFIED' => Colors.green,
     'FAILED' => Colors.red,
@@ -360,15 +423,22 @@ class _DetailBody extends ConsumerWidget {
 
 class _StatusBanner extends StatelessWidget {
   final OrderEntity order;
+  final bool receiptSubmitted;
   final bool isTablet;
 
-  const _StatusBanner({required this.order, required this.isTablet});
+  const _StatusBanner({
+    required this.order,
+    required this.receiptSubmitted,
+    required this.isTablet,
+  });
 
   ({String label, String description, Color color, IconData icon}) get _info =>
       switch (order.status) {
         'PENDING' => (
           label: 'Pending',
-          description: 'Awaiting confirmation from the store.',
+          description: receiptSubmitted
+              ? 'Receipt submitted. Awaiting store confirmation.'
+              : 'Please upload your payment receipt to proceed.',
           color: Colors.orange,
           icon: Icons.hourglass_top_rounded,
         ),

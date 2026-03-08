@@ -5,10 +5,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:project_ease/core/error/failures.dart';
 import 'package:project_ease/features/order/data/datasources/remote/order_remote_datasource.dart';
 import 'package:project_ease/features/order/domain/entities/order_entity.dart';
+import 'package:project_ease/features/order/domain/entities/payment_entity.dart';
 import 'package:project_ease/features/order/domain/repositories/order_repository.dart';
 
-final orderRepositoryProvider = Provider<IOrderRepository>((ref) =>
-    OrderRepository(remote: ref.read(orderRemoteDatasourceProvider)));
+final orderRepositoryProvider = Provider<IOrderRepository>(
+  (ref) => OrderRepository(remote: ref.read(orderRemoteDatasourceProvider)),
+);
 
 class OrderRepository implements IOrderRepository {
   final OrderRemoteDatasource _remote;
@@ -29,9 +31,12 @@ class OrderRepository implements IOrderRepository {
 
   Either<Failure, T> _handleError<T>(Object e, String fallback) {
     if (e is DioException) {
-      return Left(ApiFailure(
+      return Left(
+        ApiFailure(
           message: _extractError(e, fallback),
-          statusCode: e.response?.statusCode));
+          statusCode: e.response?.statusCode,
+        ),
+      );
     }
     return Left(ApiFailure(message: e.toString()));
   }
@@ -45,10 +50,11 @@ class OrderRepository implements IOrderRepository {
   }) async {
     try {
       final model = await _remote.createOrder(
-          storeId: storeId,
-          pickupDate: pickupDate,
-          pickupTime: pickupTime,
-          notes: notes);
+        storeId: storeId,
+        pickupDate: pickupDate,
+        pickupTime: pickupTime,
+        notes: notes,
+      );
       return Right(model.toEntity());
     } catch (e) {
       return _handleError(e, 'Failed to create order.');
@@ -66,12 +72,13 @@ class OrderRepository implements IOrderRepository {
   }) async {
     try {
       final model = await _remote.buyNow(
-          productId: productId,
-          quantity: quantity,
-          storeId: storeId,
-          pickupDate: pickupDate,
-          pickupTime: pickupTime,
-          notes: notes);
+        productId: productId,
+        quantity: quantity,
+        storeId: storeId,
+        pickupDate: pickupDate,
+        pickupTime: pickupTime,
+        notes: notes,
+      );
       return Right(model.toEntity());
     } catch (e) {
       return _handleError(e, 'Failed to place order.');
@@ -100,7 +107,9 @@ class OrderRepository implements IOrderRepository {
 
   @override
   Future<Either<Failure, OrderEntity>> cancelOrder(
-      String orderId, String? reason) async {
+    String orderId,
+    String? reason,
+  ) async {
     try {
       final model = await _remote.cancelOrder(orderId, reason);
       return Right(model.toEntity());
@@ -118,13 +127,26 @@ class OrderRepository implements IOrderRepository {
   }) async {
     try {
       await _remote.submitReceipt(
-          orderId: orderId,
-          receiptImagePath: receiptImagePath,
-          paymentMethod: paymentMethod,
-          notes: notes);
+        orderId: orderId,
+        receiptImagePath: receiptImagePath,
+        paymentMethod: paymentMethod,
+        notes: notes,
+      );
       return const Right(null);
     } catch (e) {
       return _handleError(e, 'Failed to submit receipt.');
+    }
+  }
+
+  @override
+  Future<Either<Failure, PaymentEntity?>> getOrderPayment(
+    String orderId,
+  ) async {
+    try {
+      final model = await _remote.getOrderPayment(orderId);
+      return Right(model?.toEntity());
+    } catch (e) {
+      return _handleError(e, 'Failed to fetch payment.');
     }
   }
 }

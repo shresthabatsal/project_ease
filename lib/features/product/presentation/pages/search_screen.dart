@@ -545,7 +545,7 @@ class _SearchOverlayState extends State<_SearchOverlay> {
   }
 }
 
-// ─── Suggestion Tile ──────────────────────────────────────────────────────────
+// Suggestion Tile
 
 class _SuggestionTile extends StatelessWidget {
   final String query;
@@ -1115,7 +1115,7 @@ class _FilterSheetState extends ConsumerState<_FilterSheet> {
                         ),
                       ),
                       _FilterChip(
-                        label: 'Price: Low → High',
+                        label: 'Price: Low to High',
                         selected:
                             _filter.sortBy == 'price' &&
                             _filter.sortOrder == 'asc',
@@ -1127,7 +1127,7 @@ class _FilterSheetState extends ConsumerState<_FilterSheet> {
                         ),
                       ),
                       _FilterChip(
-                        label: 'Price: High → Low',
+                        label: 'Price: High to Low',
                         selected:
                             _filter.sortBy == 'price' &&
                             _filter.sortOrder == 'desc',
@@ -1159,7 +1159,7 @@ class _FilterSheetState extends ConsumerState<_FilterSheet> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'NPR \${_priceRange.start.toInt()}',
+                        'NPR ${_priceRange.start.toInt()}',
                         style: TextStyle(
                           fontSize: 13,
                           color: Colors.grey.shade600,
@@ -1167,8 +1167,8 @@ class _FilterSheetState extends ConsumerState<_FilterSheet> {
                       ),
                       Text(
                         _priceRange.end >= _maxBound
-                            ? 'NPR \${_maxBound.toInt()}+'
-                            : 'NPR \${_priceRange.end.toInt()}',
+                            ? 'NPR ${_maxBound.toInt()}+'
+                            : 'NPR ${_priceRange.end.toInt()}',
                         style: TextStyle(
                           fontSize: 13,
                           color: Colors.grey.shade600,

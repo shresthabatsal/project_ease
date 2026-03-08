@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:project_ease/apps/theme/app_colors.dart';
+import 'package:project_ease/core/api/api_endpoints.dart';
 import 'package:project_ease/core/utils/snackbar_utils.dart';
-import 'package:project_ease/features/order/presentation/pages/order_confirmation_screen.dart';
 import 'package:project_ease/features/order/domain/entities/order_entity.dart';
+import 'package:project_ease/features/order/presentation/pages/order_confirmation_screen.dart';
 import 'package:project_ease/features/order/presentation/state/order_state.dart';
 import 'package:project_ease/features/order/presentation/view_model/order_view_model.dart';
 
@@ -181,13 +182,14 @@ class _ReceiptUploadScreenState extends ConsumerState<ReceiptUploadScreen> {
         ),
       ),
       body: Stack(
+        fit: StackFit.expand,
         children: [
           SingleChildScrollView(
             padding: EdgeInsets.fromLTRB(
               isTablet ? 32 : 16,
               12,
               isTablet ? 32 : 16,
-              100 + MediaQuery.of(context).padding.bottom,
+              120 + MediaQuery.of(context).padding.bottom,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -195,6 +197,19 @@ class _ReceiptUploadScreenState extends ConsumerState<ReceiptUploadScreen> {
                 // Order info card
                 _InfoCard(order: widget.order, isTablet: isTablet),
                 const SizedBox(height: 20),
+
+                // Store payment QR
+                if (widget.order.storePaymentQrCode != null) ...[
+                  _SectionLabel(label: 'Scan to Pay', isTablet: isTablet),
+                  const SizedBox(height: 8),
+                  _QrCard(
+                    qrPath: widget.order.storePaymentQrCode!,
+                    storeName: widget.order.storeName,
+                    amount: widget.order.totalAmount,
+                    isTablet: isTablet,
+                  ),
+                  const SizedBox(height: 20),
+                ],
 
                 // Receipt image upload
                 _SectionLabel(label: 'Payment Receipt', isTablet: isTablet),
@@ -495,7 +510,8 @@ class _InfoCard extends StatelessWidget {
         children: [
           _InfoRow(
             label: 'Order ID',
-            value: '#${order.otp}',
+            value:
+                '#${order.orderId.length > 8 ? order.orderId.substring(order.orderId.length - 8).toUpperCase() : order.orderId.toUpperCase()}',
             isTablet: isTablet,
             valueColor: AppColors.primary,
           ),
@@ -575,6 +591,169 @@ class _SectionLabel extends StatelessWidget {
         fontWeight: FontWeight.w700,
         color: Colors.black54,
         letterSpacing: 0.3,
+      ),
+    );
+  }
+}
+
+
+// QR Card
+class _QrCard extends StatelessWidget {
+  final String qrPath;
+  final String? storeName;
+  final double amount;
+  final bool isTablet;
+
+  const _QrCard({
+    required this.qrPath,
+    required this.storeName,
+    required this.amount,
+    required this.isTablet,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final qrUrl = '${ApiEndpoints.mediaServerUrl}$qrPath';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Instruction text
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.info_outline_rounded,
+                  size: 15,
+                  color: AppColors.primary,
+                ),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    'Scan the QR below with your payment app',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 18),
+
+          // QR image
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.network(
+              qrUrl,
+              width: isTablet ? 220 : 180,
+              height: isTablet ? 220 : 180,
+              fit: BoxFit.contain,
+              loadingBuilder: (_, child, progress) {
+                if (progress == null) return child;
+                return SizedBox(
+                  width: isTablet ? 220 : 180,
+                  height: isTablet ? 220 : 180,
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      value: progress.expectedTotalBytes != null
+                          ? progress.cumulativeBytesLoaded /
+                                progress.expectedTotalBytes!
+                          : null,
+                      strokeWidth: 2,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                );
+              },
+              errorBuilder: (_, __, ___) => Container(
+                width: isTablet ? 220 : 180,
+                height: isTablet ? 220 : 180,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.qr_code_2_rounded,
+                      size: 48,
+                      color: Colors.grey.shade300,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'QR unavailable',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade400,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Amount chip
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.07),
+              borderRadius: BorderRadius.circular(30),
+              border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+            ),
+            child: Text(
+              'Amount: NPR ${amount.toStringAsFixed(0)}',
+              style: TextStyle(
+                fontSize: isTablet ? 15 : 14,
+                fontWeight: FontWeight.w700,
+                color: AppColors.primary,
+              ),
+            ),
+          ),
+
+          if (storeName != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              storeName!,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey.shade500,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+
+          const SizedBox(height: 12),
+          Text(
+            'After payment, upload your receipt below',
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade400),
+          ),
+        ],
       ),
     );
   }

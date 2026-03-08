@@ -9,6 +9,7 @@ class StoreApiModel {
   final double? longitude;
   final String? pickupInstructions;
   final double? distance;
+  final String? paymentQrCode;
 
   StoreApiModel({
     required this.id,
@@ -19,6 +20,7 @@ class StoreApiModel {
     this.longitude,
     this.pickupInstructions,
     this.distance,
+    this.paymentQrCode,
   });
 
   factory StoreApiModel.fromJson(Map<String, dynamic> json) {
@@ -32,6 +34,7 @@ class StoreApiModel {
       longitude: (coords?['longitude'] as num?)?.toDouble(),
       pickupInstructions: json['pickupInstructions'],
       distance: (json['distance'] as num?)?.toDouble(),
+      paymentQrCode: json['paymentQRCode'],
     );
   }
 
@@ -45,5 +48,6 @@ class StoreApiModel {
         : null,
     pickupInstructions: pickupInstructions,
     distance: distance,
+    paymentQrCode: paymentQrCode,
   );
 }

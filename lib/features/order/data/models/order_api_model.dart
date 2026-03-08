@@ -46,6 +46,7 @@ class OrderApiModel {
   final String paymentStatus;
   final String status;
   final DateTime orderDate;
+  final String? storePaymentQrCode;
 
   OrderApiModel({
     required this.id,
@@ -60,6 +61,7 @@ class OrderApiModel {
     required this.paymentStatus,
     required this.status,
     required this.orderDate,
+    this.storePaymentQrCode,
   });
 
   factory OrderApiModel.fromJson(Map<String, dynamic> json) {
@@ -81,6 +83,7 @@ class OrderApiModel {
       paymentStatus: json['paymentStatus'] ?? 'PENDING',
       status: json['status'] ?? 'PENDING',
       orderDate: DateTime.tryParse(json['orderDate'] ?? '') ?? DateTime.now(),
+      storePaymentQrCode: storeRaw is Map ? storeRaw['paymentQRCode'] : null,
     );
   }
 
@@ -97,5 +100,6 @@ class OrderApiModel {
     paymentStatus: paymentStatus,
     status: status,
     orderDate: orderDate,
+    storePaymentQrCode: storePaymentQrCode,
   );
 }

@@ -18,6 +18,7 @@ class StoreEntity extends Equatable {
   final StoreCoordinates? coordinates;
   final String? pickupInstructions;
   final double? distance;
+  final String? paymentQrCode;
 
   const StoreEntity({
     required this.storeId,
@@ -27,6 +28,7 @@ class StoreEntity extends Equatable {
     this.coordinates,
     this.pickupInstructions,
     this.distance,
+    this.paymentQrCode,
   });
 
   @override
@@ -37,5 +39,6 @@ class StoreEntity extends Equatable {
     logo,
     coordinates,
     distance,
+    paymentQrCode,
   ];
 }

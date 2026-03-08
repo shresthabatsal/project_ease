@@ -32,14 +32,13 @@ class OrderViewModel extends Notifier<OrderState> {
     return const OrderState();
   }
 
-  // Create order from cart items
   Future<bool> createOrder({
     required String storeId,
     required String pickupDate,
     required String pickupTime,
     String? notes,
   }) async {
-    state = state.copyWith(status: OrderStatus.loading);
+    state = state.copyWith(status: OrderStatus.loading, clearError: true);
     final result = await _createOrder(
       CreateOrderParams(
         storeId: storeId,
@@ -67,7 +66,6 @@ class OrderViewModel extends Notifier<OrderState> {
     );
   }
 
-  // Direct buy now flow
   Future<bool> buyNow({
     required String productId,
     required int quantity,
@@ -76,7 +74,7 @@ class OrderViewModel extends Notifier<OrderState> {
     required String pickupTime,
     String? notes,
   }) async {
-    state = state.copyWith(status: OrderStatus.loading);
+    state = state.copyWith(status: OrderStatus.loading, clearError: true);
     final result = await _buyNow(
       BuyNowParams(
         productId: productId,
@@ -106,7 +104,7 @@ class OrderViewModel extends Notifier<OrderState> {
   }
 
   Future<void> loadOrders() async {
-    state = state.copyWith(status: OrderStatus.loading);
+    state = state.copyWith(status: OrderStatus.loading, clearError: true);
     final result = await _getUserOrders();
     result.fold(
       (f) => state = state.copyWith(
@@ -124,7 +122,7 @@ class OrderViewModel extends Notifier<OrderState> {
     String? paymentMethod,
     String? notes,
   }) async {
-    state = state.copyWith(status: OrderStatus.loading);
+    state = state.copyWith(status: OrderStatus.loading, clearError: true);
     final result = await _submitReceipt(
       SubmitReceiptParams(
         orderId: orderId,
@@ -148,7 +146,6 @@ class OrderViewModel extends Notifier<OrderState> {
     );
   }
 
-  // Fetch a single order by ID
   Future<OrderEntity?> fetchOrder(String orderId) async {
     final result = await _getOrder(orderId);
     return result.fold(
@@ -166,9 +163,8 @@ class OrderViewModel extends Notifier<OrderState> {
     );
   }
 
-  // Cancel order
   Future<bool> cancelOrder(String orderId, String? reason) async {
-    state = state.copyWith(status: OrderStatus.loading);
+    state = state.copyWith(status: OrderStatus.loading, clearError: true);
     final result = await _cancelOrder(
       CancelOrderParams(orderId: orderId, reason: reason),
     );

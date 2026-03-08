@@ -1,10 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:project_ease/apps/theme/app_colors.dart';
-import 'package:project_ease/features/order/presentation/pages/order_detail_screen.dart';
 import 'package:project_ease/features/order/domain/entities/order_entity.dart';
+import 'package:project_ease/features/order/domain/usecases/get_order_payment_usecase.dart';
+import 'package:project_ease/features/order/presentation/pages/order_detail_screen.dart';
 import 'package:project_ease/features/order/presentation/state/order_state.dart';
 import 'package:project_ease/features/order/presentation/view_model/order_view_model.dart';
+
+final _orderCardPaymentProvider = FutureProvider.autoDispose
+    .family<bool, String>((ref, orderId) async {
+      final usecase = ref.read(getOrderPaymentUsecaseProvider);
+      final result = await usecase(orderId);
+      return result.fold((_) => false, (p) => p != null);
+    });
 
 class MyOrdersScreen extends ConsumerStatefulWidget {
   final String? initialFilter;
@@ -86,7 +94,7 @@ class _MyOrdersScreenState extends ConsumerState<MyOrdersScreen> {
       ),
       body: Column(
         children: [
-          // Filter bar
+          // ── Filter bar ───────────────────────────────────────────────
           Container(
             color: Colors.white,
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
@@ -213,7 +221,7 @@ class _FilterChip extends StatelessWidget {
 
 // Order Card
 
-class _OrderCard extends StatelessWidget {
+class _OrderCard extends ConsumerWidget {
   final OrderEntity order;
   final bool isTablet;
   final Color statusColor;
@@ -244,9 +252,17 @@ class _OrderCard extends StatelessWidget {
   };
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // hasReceipt = a payment record exists in DB (receipt was submitted)
+    final hasReceipt = ref
+        .watch(_orderCardPaymentProvider(order.orderId))
+        .when(data: (v) => v, loading: () => false, error: (_, __) => false);
+
     final payPending =
-        order.paymentStatus == 'PENDING' && order.status != 'CANCELLED';
+        !hasReceipt &&
+        order.paymentStatus == 'PENDING' &&
+        order.status != 'CANCELLED' &&
+        order.status != 'COLLECTED';
 
     return GestureDetector(
       onTap: onTap,
@@ -325,7 +341,7 @@ class _OrderCard extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
 
-            // OTP chip
+            // ── OTP chip (CONFIRMED / READY_FOR_COLLECTION only) ─────
             if (order.otp != null &&
                 (order.status == 'CONFIRMED' ||
                     order.status == 'READY_FOR_COLLECTION')) ...[

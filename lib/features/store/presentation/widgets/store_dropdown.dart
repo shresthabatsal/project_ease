@@ -78,6 +78,7 @@ class StoreDropdown extends ConsumerWidget {
   ) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -129,108 +130,129 @@ class _StorePickerSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Handle
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+    return SafeArea(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.6,
+        ),
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(16, 12, 16, bottomPadding + 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Select a Store',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-              ),
-              const Spacer(),
-              // View on map button
-              GestureDetector(
-                onTap: onViewMap,
+              // Handle
+              Center(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
+                  width: 40,
+                  height: 4,
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10),
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(4),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.map_outlined,
-                        size: 14,
-                        color: AppColors.primary,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  const Text(
+                    'Select a Store',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  ),
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: onViewMap,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
                       ),
-                      const SizedBox(width: 4),
-                      const Text(
-                        'View on map',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.map_outlined,
+                            size: 14,
+                            color: AppColors.primary,
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            'View on map',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Flexible(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: stores.length,
+                  itemBuilder: (_, i) {
+                    final store = stores[i];
+                    final isSelected = selectedStore?.storeId == store.storeId;
+                    return ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(
+                          Icons.store_outlined,
                           color: AppColors.primary,
                         ),
                       ),
-                    ],
-                  ),
+                      title: Text(
+                        store.name,
+                        style: TextStyle(
+                          fontWeight: isSelected
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                          color: isSelected
+                              ? AppColors.primary
+                              : Colors.black87,
+                        ),
+                      ),
+                      subtitle: store.description != null
+                          ? Text(
+                              store.description!,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey.shade500,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            )
+                          : null,
+                      trailing: isSelected
+                          ? const Icon(
+                              Icons.check_circle,
+                              color: AppColors.primary,
+                            )
+                          : null,
+                      onTap: () => onSelect(store),
+                    );
+                  },
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          ...stores.map((store) {
-            final isSelected = selectedStore?.storeId == store.storeId;
-            return ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(
-                  Icons.store_outlined,
-                  color: AppColors.primary,
-                ),
-              ),
-              title: Text(
-                store.name,
-                style: TextStyle(
-                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                  color: isSelected ? AppColors.primary : Colors.black87,
-                ),
-              ),
-              subtitle: store.description != null
-                  ? Text(
-                      store.description!,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey.shade500,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    )
-                  : null,
-              trailing: isSelected
-                  ? const Icon(Icons.check_circle, color: AppColors.primary)
-                  : null,
-              onTap: () => onSelect(store),
-            );
-          }),
-        ],
+        ),
       ),
     );
   }

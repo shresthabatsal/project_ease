@@ -29,10 +29,11 @@ class OrderEntity extends Equatable {
   final String? notes;
   final DateTime pickupDate;
   final String pickupTime;
-  final String paymentStatus; // PENDING, VERIFIED, FAILED
+  final String paymentStatus; // PENDING | VERIFIED | FAILED
   final String
-  status; // PENDING, CONFIRMED, READY_FOR_COLLECTION, COLLECTED, CANCELLED
+  status; // PENDING | CONFIRMED | READY_FOR_COLLECTION | COLLECTED | CANCELLED
   final DateTime orderDate;
+  final String? storePaymentQrCode;
 
   const OrderEntity({
     required this.orderId,
@@ -47,6 +48,7 @@ class OrderEntity extends Equatable {
     required this.paymentStatus,
     required this.status,
     required this.orderDate,
+    this.storePaymentQrCode,
   });
 
   @override

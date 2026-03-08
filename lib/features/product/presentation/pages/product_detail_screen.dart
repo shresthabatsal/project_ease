@@ -7,8 +7,8 @@ import 'package:project_ease/features/cart/domain/entities/cart_entity.dart';
 import 'package:project_ease/features/cart/presentation/view_model/cart_view_model.dart';
 import 'package:project_ease/features/order/presentation/pages/checkout_screen.dart';
 import 'package:project_ease/features/product/domain/entities/product_entity.dart';
-import 'package:project_ease/features/rating/presentation/widgets/rating_section.dart';
 import 'package:project_ease/core/utils/snackbar_utils.dart';
+import 'package:project_ease/features/rating/presentation/widgets/rating_section.dart';
 import 'package:project_ease/features/store/presentation/view_model/store_view_model.dart';
 
 class ProductDetailScreen extends ConsumerStatefulWidget {
@@ -51,6 +51,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
     final isTablet = MediaQuery.of(context).size.width >= 600;
     final screenWidth = MediaQuery.of(context).size.width;
     final imageHeight = isTablet ? screenWidth * 0.45 : screenWidth * 0.75;
+    final totalPrice = widget.product.price * _quantity;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -99,18 +100,20 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                 ),
               ),
 
-              // Product info
+              // ── Product info ────────────────────────────────────────────
               SliverToBoxAdapter(
                 child: Padding(
                   padding: EdgeInsets.fromLTRB(
                     isTablet ? 32 : 20,
                     20,
                     isTablet ? 32 : 20,
+                    // Bottom padding = bottom bar height + safe area
                     120 + MediaQuery.of(context).padding.bottom,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Category + subcategory badges
                       if (widget.product.categoryName != null ||
                           widget.product.subcategoryName != null)
                         Wrap(
@@ -252,7 +255,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                         Align(
                           alignment: Alignment.centerRight,
                           child: Text(
-                            'Total: NPR \${totalPrice.toStringAsFixed(0)}',
+                            'Total: NPR ${totalPrice.toStringAsFixed(0)}',
                             style: TextStyle(
                               fontSize: isTablet ? 14 : 13,
                               fontWeight: FontWeight.w600,
@@ -264,6 +267,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
 
                       const SizedBox(height: 24),
 
+                      // ── Ratings & Reviews ──────────────────────────────────
                       RatingSection(
                         productId: widget.product.productId,
                         isTablet: isTablet,

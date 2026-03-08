@@ -14,31 +14,57 @@ class SplashScreen extends ConsumerStatefulWidget {
   ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends ConsumerState<SplashScreen> {
+class _SplashScreenState extends ConsumerState<SplashScreen>
+    with SingleTickerProviderStateMixin {
   late VideoPlayerController _controller;
+  late AnimationController _fadeController;
+  late Animation<double> _fadeAnimation;
   bool _hasNavigated = false;
+  bool _videoReady = false;
 
   @override
   void initState() {
     super.initState();
 
-    _controller = VideoPlayerController.asset("assets/videos/ease_splash.mp4");
-    _controller.initialize().then((_) {
-      setState(() {});
-      _controller.play();
-      _controller.setLooping(false);
+    _fadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _fadeController,
+      curve: Curves.easeIn,
+    );
 
-      _controller.addListener(() {
-        if (_controller.value.position >= _controller.value.duration) {
-          _navigateNext();
-        }
-      });
-    });
+    _controller = VideoPlayerController.asset("assets/videos/ease_splash.mp4");
+    _controller
+        .initialize()
+        .then((_) {
+          if (!mounted) return;
+          setState(() => _videoReady = true);
+          _fadeController.forward();
+          _controller.play();
+          _controller.setLooping(false);
+          _controller.addListener(_onVideoProgress);
+        })
+        .catchError((_) {
+          Future.delayed(const Duration(seconds: 2), _navigateNext);
+        });
+
+    // Safety timeout
+    Future.delayed(const Duration(seconds: 8), _navigateNext);
+  }
+
+  void _onVideoProgress() {
+    if (_controller.value.position >= _controller.value.duration) {
+      _navigateNext();
+    }
   }
 
   @override
   void dispose() {
+    _controller.removeListener(_onVideoProgress);
     _controller.dispose();
+    _fadeController.dispose();
     super.dispose();
   }
 
@@ -54,7 +80,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       return;
     }
 
-    // Not logged in, show onboarding only on first ever launch
     final firstLaunch = await isFirstLaunch();
     if (!mounted) return;
 
@@ -72,18 +97,21 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: Center(
-        child: _controller.value.isInitialized
-            ? ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxWidth: screenWidth * 0.8,
-                  maxHeight: screenHeight * 0.5,
-                ),
-                child: AspectRatio(
-                  aspectRatio: _controller.value.aspectRatio,
-                  child: VideoPlayer(_controller),
+        child: _videoReady
+            ? FadeTransition(
+                opacity: _fadeAnimation,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: screenWidth * 0.8,
+                    maxHeight: screenHeight * 0.5,
+                  ),
+                  child: AspectRatio(
+                    aspectRatio: _controller.value.aspectRatio,
+                    child: VideoPlayer(_controller),
+                  ),
                 ),
               )
-            : const CircularProgressIndicator(),
+            : const SizedBox.shrink(), // pure white, nothing shown
       ),
     );
   }

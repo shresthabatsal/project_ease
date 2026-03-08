@@ -2,17 +2,17 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:project_ease/apps/routes/app_routes.dart';
 import 'package:project_ease/apps/theme/app_colors.dart';
 import 'package:project_ease/core/api/api_endpoints.dart';
 import 'package:project_ease/core/utils/snackbar_utils.dart';
-import 'package:project_ease/features/auth/domain/entities/auth_entity.dart';
 import 'package:project_ease/features/auth/presentation/pages/login_screen.dart';
+import 'package:project_ease/features/auth/domain/entities/auth_entity.dart';
 import 'package:project_ease/features/auth/presentation/view_model/auth_view_model.dart';
 import 'package:project_ease/features/order/presentation/pages/my_orders_screen.dart';
-import 'package:project_ease/features/profile/presentation/state/profile_state.dart';
 import 'package:project_ease/features/profile/presentation/view_model/profile_view_model.dart';
 import 'package:project_ease/features/support/presentation/pages/my_tickets_screen.dart';
+import 'package:project_ease/core/services/storage/app_settings.dart';
+import 'package:project_ease/features/profile/presentation/state/profile_state.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -50,10 +50,6 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// _ProfileBody
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _ProfileBody extends ConsumerWidget {
   final AuthEntity user;
@@ -193,18 +189,38 @@ class _ProfileBody extends ConsumerWidget {
 
           const SizedBox(height: 12),
 
-          // Raise Support Ticket
-          _ActionRow(
-            icon: Icons.receipt_long_outlined,
-            label: 'Raise Support Ticket',
+          // App Preferences
+          _SectionCard(
             isTablet: isTablet,
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const MyTicketsScreen()),
-            ),
+            children: [_ShakeToggleRow(isTablet: isTablet)],
           ),
 
           const SizedBox(height: 28),
+
+          // Support
+          SizedBox(
+            width: double.infinity,
+            height: isTablet ? 52 : 48,
+            child: ElevatedButton.icon(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const MyTicketsScreen()),
+              ),
+              icon: const Icon(Icons.support_agent_rounded, size: 18),
+              label: const Text('Raise a Ticket'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary.withOpacity(0.08),
+                foregroundColor: AppColors.primary,
+                elevation: 0,
+                side: BorderSide(color: AppColors.primary.withOpacity(0.3)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 12),
 
           // Logout button
           SizedBox(
@@ -329,10 +345,12 @@ class _ProfileBody extends ConsumerWidget {
     );
 
     if (confirmed == true && context.mounted) {
-      // Use the same auth use case as AccountScreen
       await ref.read(authViewModelProvider.notifier).logout();
       if (context.mounted) {
-        AppRoutes.pushAndRemoveUntil(context, const LoginScreen());
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+          (route) => false,
+        );
       }
     }
   }
@@ -1044,10 +1062,6 @@ class _PasswordSheetState extends ConsumerState<_PasswordSheet> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Shared: _FieldInput  +  _SaveButton
-// ─────────────────────────────────────────────────────────────────────────────
-
 class _FieldInput extends StatelessWidget {
   final TextEditingController controller;
   final String label;
@@ -1176,6 +1190,97 @@ class _ErrorView extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           TextButton(onPressed: onRetry, child: const Text('Try again')),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionCard extends StatelessWidget {
+  final List<Widget> children;
+  final bool isTablet;
+
+  const _SectionCard({required this.children, required this.isTablet});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(children: children),
+    );
+  }
+}
+
+// ShakeToggleRow
+class _ShakeToggleRow extends ConsumerWidget {
+  final bool isTablet;
+  const _ShakeToggleRow({required this.isTablet});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final enabled = ref.watch(
+      appSettingsProvider.select((s) => s.shakeEnabled),
+    );
+
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: isTablet ? 20 : 16,
+        vertical: 4,
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.vibration_rounded,
+              size: 20,
+              color: AppColors.primary,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Shake to View Orders',
+                  style: TextStyle(
+                    fontSize: isTablet ? 15 : 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                ),
+                Text(
+                  'Shake your phone to quickly open orders',
+                  style: TextStyle(
+                    fontSize: isTablet ? 13 : 12,
+                    color: Colors.grey.shade500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Switch(
+            value: enabled,
+            onChanged: (val) =>
+                ref.read(appSettingsProvider.notifier).setShakeEnabled(val),
+            activeColor: AppColors.primary,
+          ),
         ],
       ),
     );

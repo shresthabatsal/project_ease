@@ -22,6 +22,7 @@ class OrderState extends Equatable {
     bool clearCurrentOrder = false,
     List<OrderEntity>? orders,
     String? errorMessage,
+    bool clearError = false,
   }) {
     return OrderState(
       status: status ?? this.status,
@@ -29,7 +30,7 @@ class OrderState extends Equatable {
           ? null
           : (currentOrder ?? this.currentOrder),
       orders: orders ?? this.orders,
-      errorMessage: errorMessage ?? this.errorMessage,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );
   }
 

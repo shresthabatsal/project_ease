@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:project_ease/core/api/api_client.dart';
 import 'package:project_ease/core/api/api_endpoints.dart';
 import 'package:project_ease/features/order/data/models/order_api_model.dart';
+import 'package:project_ease/features/order/data/models/payment_api_model.dart';
 
 final orderRemoteDatasourceProvider = Provider<OrderRemoteDatasource>(
   (ref) => OrderRemoteDatasource(apiClient: ref.read(apiClientProvider)),
@@ -73,6 +74,19 @@ class OrderRemoteDatasource {
       data: {if (reason != null) 'reason': reason},
     );
     return _parseOrder(response.data['data']);
+  }
+
+  Future<PaymentApiModel?> getOrderPayment(String orderId) async {
+    try {
+      final response = await _apiClient.get(
+        ApiEndpoints.getOrderPayment(orderId),
+      );
+      final data = response.data['data'];
+      if (data == null) return null;
+      return PaymentApiModel.fromJson(data as Map<String, dynamic>);
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<void> submitReceipt({
