@@ -1,5 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:project_ease/core/constants/hive_table_constant.dart';
 import 'package:project_ease/features/product/data/models/category_hive_model.dart';
 import 'package:project_ease/features/product/data/models/product_api_model.dart';
@@ -30,6 +31,7 @@ class ProductLocalDatasource {
           description: m.description,
         ),
     });
+    debugPrint('[Cache] Saved ${_categoryBox.length} categories.');
   }
 
   Future<void> saveProductsForStore(
@@ -55,11 +57,12 @@ class ProductLocalDatasource {
           stock: m.stock,
         ),
     });
+    debugPrint('[Cache] Saved ${box.length} products for store: $storeId');
   }
 
   // Read
   List<CategoryApiModel> getCategories() {
-    return _categoryBox.values
+    final categories = _categoryBox.values
         .map(
           (h) => CategoryApiModel(
             id: h.id,
@@ -69,11 +72,13 @@ class ProductLocalDatasource {
           ),
         )
         .toList();
+    debugPrint('[Cache] Read ${categories.length} categories from cache.');
+    return categories;
   }
 
   Future<List<ProductApiModel>> getProductsForStore(String storeId) async {
     final box = await _productBox(storeId);
-    return box.values
+    final products = box.values
         .map(
           (h) => ProductApiModel(
             id: h.id,
@@ -91,13 +96,22 @@ class ProductLocalDatasource {
           ),
         )
         .toList();
+    debugPrint('[Cache] Read ${products.length} products for store: $storeId');
+    return products;
   }
 
-  // Has cache
-  bool hasCategories() => _categoryBox.isNotEmpty;
+  bool hasCategories() {
+    final has = _categoryBox.isNotEmpty;
+    debugPrint('[Cache] hasCategories: $has (count: ${_categoryBox.length})');
+    return has;
+  }
 
   Future<bool> hasProductsForStore(String storeId) async {
     final box = await _productBox(storeId);
-    return box.isNotEmpty;
+    final has = box.isNotEmpty;
+    debugPrint(
+      '[Cache] hasProductsForStore($storeId): $has (count: ${box.length})',
+    );
+    return has;
   }
 }

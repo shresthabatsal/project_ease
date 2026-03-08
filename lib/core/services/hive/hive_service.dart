@@ -1,8 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:project_ease/core/constants/hive_table_constant.dart';
 import 'package:project_ease/features/auth/data/models/auth_hive_model.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:project_ease/features/product/data/models/category_hive_model.dart';
 import 'package:project_ease/features/product/data/models/product_hive_model.dart';
 
@@ -12,9 +11,7 @@ final hiveServiceProvider = Provider<HiveService>((ref) {
 
 class HiveService {
   Future<void> init() async {
-    final directory = await getApplicationDocumentsDirectory();
-    final path = "${directory.path}/${HiveTableConstant.dbName}";
-    Hive.init(path);
+    await Hive.initFlutter(HiveTableConstant.dbName);
     _registerAdapters();
     await _openBox();
   }

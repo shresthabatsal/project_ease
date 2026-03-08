@@ -32,7 +32,9 @@ class ApiClient {
     // Auth interceptor (JWT)
     _dio.interceptors.add(AuthInterceptor(_tokenService));
 
-    // Retry on network errors
+    // Retry only on timeouts — NOT on connectionError.
+    // connectionError means the device is offline; retrying wastes time and
+    // delays the cache fallback in the repository by 1+2+3 = 6 seconds.
     _dio.interceptors.add(
       RetryInterceptor(
         dio: _dio,
@@ -45,8 +47,8 @@ class ApiClient {
         retryEvaluator: (error, attempt) {
           return error.type == DioExceptionType.connectionTimeout ||
               error.type == DioExceptionType.receiveTimeout ||
-              error.type == DioExceptionType.sendTimeout ||
-              error.type == DioExceptionType.connectionError;
+              error.type == DioExceptionType.sendTimeout;
+          // ← connectionError removed: device is offline, no point retrying
         },
       ),
     );

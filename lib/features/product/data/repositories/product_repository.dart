@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:project_ease/core/error/failures.dart';
 import 'package:project_ease/features/product/data/datasources/local/product_local_datasource.dart';
@@ -63,22 +64,25 @@ class ProductRepository implements IProductRepository {
   ) async {
     try {
       final models = await _remote.getProductsByStore(storeId);
-      // Save fresh data to cache
       await _local.saveProductsForStore(storeId, models);
       return Right(models.map((m) => m.toEntity()).toList());
     } catch (e) {
-      // Network failed, try cache
+      debugPrint('[Repo] getProductsByStore remote failed: $e');
       try {
         final cached = await _local.getProductsForStore(storeId);
+        debugPrint('[Repo] getProductsByStore cache count: ${cached.length}');
         if (cached.isNotEmpty) {
           return Right(cached.map((m) => m.toEntity()).toList());
         }
-      } catch (_) {}
+        debugPrint('[Repo] getProductsByStore cache is empty, returning error');
+      } catch (cacheError) {
+        debugPrint('[Repo] getProductsByStore cache read threw: $cacheError');
+      }
       return _handleError(e, 'Failed to load products for store.');
     }
   }
 
-  // Products by category, not cached
+  // Products by category
   @override
   Future<Either<Failure, List<ProductEntity>>> getProductsByStoreAndCategory(
     String storeId,
@@ -91,15 +95,18 @@ class ProductRepository implements IProductRepository {
       );
       return Right(models.map((m) => m.toEntity()).toList());
     } catch (e) {
-      // Fallback
+      debugPrint('[Repo] getProductsByStoreAndCategory remote failed: $e');
       try {
         final cached = await _local.getProductsForStore(storeId);
         final filtered = cached
             .where((m) => m.categoryId == categoryId)
             .map((m) => m.toEntity())
             .toList();
+        debugPrint('[Repo] category cache filtered count: ${filtered.length}');
         if (filtered.isNotEmpty) return Right(filtered);
-      } catch (_) {}
+      } catch (cacheError) {
+        debugPrint('[Repo] category cache read threw: $cacheError');
+      }
       return _handleError(e, 'Failed to load products for category.');
     }
   }
@@ -116,15 +123,20 @@ class ProductRepository implements IProductRepository {
       );
       return Right(models.map((m) => m.toEntity()).toList());
     } catch (e) {
-      // Fallback: filter cached store products by subcategoryId
+      debugPrint('[Repo] getProductsByStoreAndSubcategory remote failed: $e');
       try {
         final cached = await _local.getProductsForStore(storeId);
         final filtered = cached
             .where((m) => m.subcategoryId == subcategoryId)
             .map((m) => m.toEntity())
             .toList();
+        debugPrint(
+          '[Repo] subcategory cache filtered count: ${filtered.length}',
+        );
         if (filtered.isNotEmpty) return Right(filtered);
-      } catch (_) {}
+      } catch (cacheError) {
+        debugPrint('[Repo] subcategory cache read threw: $cacheError');
+      }
       return _handleError(e, 'Failed to load products for subcategory.');
     }
   }
@@ -154,27 +166,33 @@ class ProductRepository implements IProductRepository {
         ),
       );
     } catch (e) {
+      debugPrint('[Repo] getAllProducts remote failed: $e');
       return _handleError(e, 'Failed to load products.');
     }
   }
 
-  // Categories, cached
-
+  // Categories
   @override
   Future<Either<Failure, List<CategoryEntity>>> getAllCategories() async {
     try {
       final models = await _remote.getAllCategories();
-      // Save fresh data to cache
       await _local.saveCategories(models);
+      debugPrint(
+        '[Repo] getAllCategories fetched ${models.length} from remote',
+      );
       return Right(models.map((m) => m.toEntity()).toList());
     } catch (e) {
-      // Network failed, try cache
+      debugPrint('[Repo] getAllCategories remote failed: $e');
       try {
-        final cached = await _local.getCategories();
+        final cached = _local.getCategories();
+        debugPrint('[Repo] getAllCategories cache count: ${cached.length}');
         if (cached.isNotEmpty) {
           return Right(cached.map((m) => m.toEntity()).toList());
         }
-      } catch (_) {}
+        debugPrint('[Repo] getAllCategories cache is empty, returning error');
+      } catch (cacheError) {
+        debugPrint('[Repo] getAllCategories cache read threw: $cacheError');
+      }
       return _handleError(e, 'Failed to load categories.');
     }
   }
